@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>漫画详情页</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            background-color: #1a1a1a;
+            color: #f1f1f1;
+            font-family: "Segoe UI", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 15px;
+        }
+        
+        .manga-header {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+            gap: 20px;
+        }
+        
+        .manga-cover {
+            flex: 0 0 220px; /* 减小封面尺寸 */
+            position: relative;
+        }
+        
+        .manga-cover img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid #444;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+        
+        .manga-cover img:hover {
+            transform: scale(1.02);
+        }
+        
+        .manga-info {
+            flex: 1;
+            min-width: 280px;
+        }
+        
+        .manga-title {
+            font-size: 22px; /* 减小标题字号 */
+            font-weight: bold;
+            color: #e0e0e0;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+            word-break: break-word;
+            line-height: 1.2;
+        }
+        
+        .manga-metadata {
+            margin-bottom: 16px; /* 减小底部间距 */
+            font-size: 14px; /* 减小字体大小 */
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* 减小最小列宽 */
+            gap: 6px 15px; /* 减小元素间距 */
+        }
+        
+        .manga-metadata .meta-item {
+            display: flex;
+            align-items: baseline;
+            padding: 3px 0; /* 减小上下内边距 */
+        }
+        
+        .meta-label {
+            flex: 0 0 90px; /* 减小标签宽度 */
+            color: #a0a0a0;
+            font-weight: 500;
+        }
+        
+        .meta-value {
+            flex: 1;
+        }
+        
+        .tag-container {
+            margin-bottom: 18px; /* 减小底部间距 */
+        }
+        
+        .tag-category {
+            margin-bottom: 12px; /* 减小底部间距 */
+        }
+        
+        .tag-category-name {
+            color: #a0a0a0;
+            font-weight: 600;
+            margin-bottom: 5px; /* 减小底部间距 */
+            font-size: 14px; /* 减小字体大小 */
+            border-left: 3px solid #555;
+            padding-left: 8px; /* 减小左侧内边距 */
+        }
+        
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px; /* 减小标签间距 */
+        }
+        
+        .tag {
+            display: inline-block;
+            background-color: #2e2e2e;
+            color: #f1f1f1;
+            padding: 4px 10px; /* 减小标签内边距 */
+            border-radius: 12px;
+            font-size: 13px; /* 减小字体大小 */
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .tag:hover {
+            background-color: #3e3e3e;
+            transform: translateY(-2px);
+        }
+        
+        .tag.female {
+            background-color: #3d2e40;
+        }
+        
+        .tag.female:hover {
+            background-color: #4d3e50;
+        }
+        
+        .tag.male {
+            background-color: #252850;
+        }
+        
+        .tag.male:hover {
+            background-color: #353860;
+        }
+        
+        .tag.artist {
+            background-color: #4d302a;
+        }
+        
+        .tag.artist:hover {
+            background-color: #5d403a;
+        }
+        
+        .tag.language {
+            background-color: #3a4020;
+        }
+        
+        .tag.language:hover {
+            background-color: #4a5030;
+        }
+        
+        .manga-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px; /* 减小按钮间距 */
+            margin-top: 15px; /* 减小上边距 */
+        }
+        
+        .action-button {
+            padding: 8px 16px; /* 减小按钮内边距 */
+            background-color: #4a4a4a;
+            border: none;
+            color: #f1f1f1;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px; /* 减小字体大小 */
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px; /* 减小图标与文字间距 */
+        }
+        
+        .action-button:hover {
+            background-color: #5a5a5a;
+            transform: translateY(-2px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .action-button.primary {
+            background-color: #4f5a34;
+            padding: 8px 18px; /* 主按钮内边距适当调整 */
+        }
+        
+        .action-button.primary:hover {
+            background-color: #5f6a44;
+        }
+        
+        .action-button.favorite {
+            background-color: #5a344f;
+        }
+        
+        .action-button.favorite:hover {
+            background-color: #6a445f;
+        }
+        
+        /* 章节列表样式 */
+        .chapters-section {
+            margin-top: 25px;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+        
+        .chapters-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .chapters-title::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 18px;
+            background-color: #5a344f;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+        
+        .chapters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 12px;
+        }
+        
+        .chapter-item {
+            background-color: #252525;
+            border-radius: 4px;
+            border: 1px solid #333;
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+        
+        .chapter-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border-color: #444;
+        }
+        
+        .chapter-link {
+            display: flex;
+            text-decoration: none;
+            color: inherit;
+            padding: 10px;
+        }
+        
+        .chapter-thumbnail {
+            flex: 0 0 40px;
+            margin-right: 10px;
+        }
+        
+        .chapter-thumbnail img {
+            width: 100%;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 3px;
+        }
+        
+        .chapter-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .chapter-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #e0e0e0;
+            margin-bottom: 5px;
+        }
+        
+        .chapter-date {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .chapter-pages {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .chapters-pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .pagination-button {
+            padding: 6px 12px;
+            background-color: #333;
+            border: 1px solid #444;
+            border-radius: 3px;
+            color: #ddd;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .pagination-button:hover {
+            background-color: #444;
+        }
+        
+        .pagination-button.active {
+            background-color: #4d302a;
+            border-color: #5d403a;
+        }
+        
+        /* 评论区样式 */
+        .comments-section {
+            margin-top: 30px;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+        
+        .comments-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .comments-title::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 18px;
+            background-color: #4f5a34;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+        
+        .comments-title .comment-count {
+            margin-left: 10px;
+            font-size: 14px;
+            color: #a0a0a0;
+            font-weight: normal;
+        }
+        
+        .comment-form {
+            margin-bottom: 25px;
+            background-color: #252525;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #333;
+        }
+        
+        .comment-textarea {
+            width: 100%;
+            height: 100px;
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 10px;
+            color: #e0e0e0;
+            resize: vertical;
+            font-family: inherit;
+            margin-bottom: 15px;
+        }
+        
+        .comment-textarea::placeholder {
+            color: #777;
+        }
+        
+        .comment-form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .comment-form-options {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .comment-option {
+            font-size: 13px;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        
+        .submit-comment {
+            padding: 8px 18px;
+            background-color: #4f5a34;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .submit-comment:hover {
+            background-color: #5f6a44;
+            transform: translateY(-2px);
+        }
+        
+        .comments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .comment-item {
+            background-color: #252525;
+            border-radius: 5px;
+            padding: 15px;
+            border: 1px solid #333;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .comment-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-name {
+            font-weight: 500;
+            color: #ddd;
+        }
+        
+        .comment-date {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .comment-content {
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        
+        .comment-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .comment-action {
+            font-size: 13px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .comment-action:hover {
+            color: #aaa;
+        }
+        
+        .comment-replies {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+        
+        .reply-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-left: 20px;
+        }
+        
+        .reply-item {
+            background-color: #2a2a2a;
+            border-radius: 4px;
+            padding: 12px;
+            border: 1px solid #363636;
+        }
+        
+        .load-more-comments {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #333;
+            color: #ddd;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .load-more-comments:hover {
+            background-color: #3a3a3a;
+        }
+        
+        /* 响应式布局调整 */
+        @media (max-width: 768px) {
+            .manga-header {
+                flex-direction: column;
+            }
+            
+            .manga-cover {
+                max-width: 180px; /* 移动端封面更小 */
+                margin: 0 auto 15px;
+            }
+            
+            .manga-metadata {
+                grid-template-columns: 1fr;
+            }
+            
+            .manga-actions {
+                justify-content: center;
+            }
+            
+            .chapters-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            }
+            
+            .comment-form-actions {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .comment-form-options {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .submit-comment {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="manga-header">
+            <div class="manga-cover">
+                <img src="40238-1yn9d5zp.webp" alt="漫画封面">
+            </div>
+            <div class="manga-info">
+                <h1 class="manga-title">[Artist] 漫画标题 / 副标题</h1>
+                <div class="manga-metadata">
+                    <div class="meta-item">
+                        <span class="meta-label">上传者:</span>
+                        <span class="meta-value">漫画用户名</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">发布时间:</span>
+                        <span class="meta-value">2023-10-28 15:30</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">页数:</span>
+                        <span class="meta-value">36 页</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">语言:</span>
+                        <span class="meta-value">日语</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">文件大小:</span>
+                        <span class="meta-value">25.4 MB</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">收藏:</span>
+                        <span class="meta-value">142 次</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">评分:</span>
+                        <span class="meta-value">★★★★☆ (4.5)</span>
+                    </div>
+                </div>
+                
+                <div class="tag-container">
+                    <div class="tag-category">
+                        <div class="tag-category-name">艺术家</div>
+                        <div class="tag-list">
+                            <span class="tag artist">艺术家名字</span>
+                        </div>
+                    </div>
+                    <div class="tag-category">
+                        <div class="tag-category-name">分类</div>
+                        <div class="tag-list">
+                            <span class="tag">同人志</span>
+                            <span class="tag">全彩</span>
+                        </div>
+                    </div>
+                    <div class="tag-category">
+                        <div class="tag-category-name">角色</div>
+                        <div class="tag-list">
+                            <span class="tag">角色1</span>
+                            <span class="tag">角色2</span>
+                            <span class="tag">角色3</span>
+                        </div>
+                    </div>
+                    <div class="tag-category">
+                        <div class="tag-category-name">女性标签</div>
+                        <div class="tag-list">
+                            <span class="tag female">标签1</span>
+                            <span class="tag female">标签2</span>
+                            <span class="tag female">标签3</span>
+                            <span class="tag female">标签4</span>
+                        </div>
+                    </div>
+                    <div class="tag-category">
+                        <div class="tag-category-name">男性标签</div>
+                        <div class="tag-list">
+                            <span class="tag male">标签1</span>
+                            <span class="tag male">标签2</span>
+                        </div>
+                    </div>
+                    <div class="tag-category">
+                        <div class="tag-category-name">其他</div>
+                        <div class="tag-list">
+                            <span class="tag">标签1</span>
+                            <span class="tag">标签2</span>
+                            <span class="tag">标签3</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="manga-actions">
+                    <button class="action-button primary">阅读漫画</button>
+                    <button class="action-button favorite">加入收藏</button>
+                    <button class="action-button">下载</button>
+                    <button class="action-button">举报</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 添加章节列表部分 -->
+        <div class="chapters-section">
+            <h2 class="chapters-title">章节列表</h2>
+            <div class="chapters-grid">
+                <!-- 第一话 -->
+                <div class="chapter-item">
+                    <a href="#chapter1" class="chapter-link">
+                        <div class="chapter-thumbnail">
+                            <img src="40238-1yn9d5zp.webp" alt="第一话缩略图">
+                        </div>
+                        <div class="chapter-info">
+                            <div class="chapter-name">第一话：序章</div>
+                            <div>
+                                <div class="chapter-date">2023-10-01</div>
+                                <div class="chapter-pages">22页</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- 第二话 -->
+                <div class="chapter-item">
+                    <a href="#chapter2" class="chapter-link">
+                        <div class="chapter-thumbnail">
+                            <img src="40238-1yn9d5zp.webp" alt="第二话缩略图">
+                        </div>
+                        <div class="chapter-info">
+                            <div class="chapter-name">第二话：相遇</div>
+                            <div>
+                                <div class="chapter-date">2023-10-15</div>
+                                <div class="chapter-pages">25页</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- 第三话 -->
+                <div class="chapter-item">
+                    <a href="#chapter3" class="chapter-link">
+                        <div class="chapter-thumbnail">
+                            <img src="40238-1yn9d5zp.webp" alt="第三话缩略图">
+                        </div>
+                        <div class="chapter-info">
+                            <div class="chapter-name">第三话：冲突</div>
+                            <div>
+                                <div class="chapter-date">2023-10-28</div>
+                                <div class="chapter-pages">24页</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- 第四话 -->
+                <div class="chapter-item">
+                    <a href="#chapter4" class="chapter-link">
+                        <div class="chapter-thumbnail">
+                            <img src="40238-1yn9d5zp.webp" alt="第四话缩略图">
+                        </div>
+                        <div class="chapter-info">
+                            <div class="chapter-name">第四话：真相</div>
+                            <div>
+                                <div class="chapter-date">2023-11-10</div>
+                                <div class="chapter-pages">28页</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- 第五话 -->
+                <div class="chapter-item">
+                    <a href="#chapter5" class="chapter-link">
+                        <div class="chapter-thumbnail">
+                            <img src="40238-1yn9d5zp.webp" alt="第五话缩略图">
+                        </div>
+                        <div class="chapter-info">
+                            <div class="chapter-name">第五话：转折</div>
+                            <div>
+                                <div class="chapter-date">2023-11-25</div>
+                                <div class="chapter-pages">26页</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- 第六话 -->
+                <div class="chapter-item">
+                    <a href="#chapter6" class="chapter-link">
+                        <div class="chapter-thumbnail">
+                            <img src="40238-1yn9d5zp.webp" alt="第六话缩略图">
+                        </div>
+                        <div class="chapter-info">
+                            <div class="chapter-name">第六话：对决</div>
+                            <div>
+                                <div class="chapter-date">2023-12-08</div>
+                                <div class="chapter-pages">30页</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="chapters-pagination">
+                <button class="pagination-button active">1</button>
+                <button class="pagination-button">2</button>
+                <button class="pagination-button">3</button>
+                <button class="pagination-button">下一页</button>
+            </div>
+        </div>
+        
+        <!-- 评论区 -->
+        <div class="comments-section">
+            <h2 class="comments-title">评论 <span class="comment-count">(32)</span></h2>
+            
+            <!-- 评论表单 -->
+            <div class="comment-form">
+                <textarea class="comment-textarea" placeholder="发表您对这部漫画的评论..."></textarea>
+                <div class="comment-form-actions">
+                    <div class="comment-form-options">
+                        <div class="comment-option">
+                            <span>😀</span> 表情
+                        </div>
+                        <div class="comment-option">
+                            <span>📷</span> 图片
+                        </div>
+                        <div class="comment-option">
+                            <span>🔗</span> 链接
+                        </div>
+                    </div>
+                    <button class="submit-comment">发表评论</button>
+                </div>
+            </div>
+            
+            <!-- 评论列表 -->
+            <div class="comments-list">
+                <!-- 评论1 -->
+                <div class="comment-item">
+                    <div class="comment-header">
+                        <div class="comment-user">
+                            <div class="user-avatar">
+                                <img src="40238-1yn9d5zp.webp" alt="用户头像">
+                            </div>
+                            <div class="user-name">漫画爱好者</div>
+                        </div>
+                        <div class="comment-date">3天前</div>
+                    </div>
+                    <div class="comment-content">
+                        这部漫画的剧情真是出乎意料的精彩！第三话的转折让我惊讶不已，期待后续发展。画风也很独特，角色表情生动。
+                    </div>
+                    <div class="comment-actions">
+                        <div class="comment-action">
+                            <span>👍</span> 15
+                        </div>
+                        <div class="comment-action">
+                            <span>💬</span> 回复
+                        </div>
+                        <div class="comment-action">
+                            <span>🔗</span> 分享
+                        </div>
+                    </div>
+                    
+                    <!-- 回复 -->
+                    <div class="comment-replies">
+                        <div class="reply-list">
+                            <div class="reply-item">
+                                <div class="comment-header">
+                                    <div class="comment-user">
+                                        <div class="user-avatar">
+                                            <img src="40238-1yn9d5zp.webp" alt="用户头像">
+                                        </div>
+                                        <div class="user-name">漫画迷</div>
+                                    </div>
+                                    <div class="comment-date">2天前</div>
+                                </div>
+                                <div class="comment-content">
+                                    同意！我也被第三话的情节震撼到了，没想到作者能想出这样的设定。
+                                </div>
+                                <div class="comment-actions">
+                                    <div class="comment-action">
+                                        <span>👍</span> 7
+                                    </div>
+                                    <div class="comment-action">
+                                        <span>💬</span> 回复
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 评论2 -->
+                <div class="comment-item">
+                    <div class="comment-header">
+                        <div class="comment-user">
+                            <div class="user-avatar">
+                                <img src="40238-1yn9d5zp.webp" alt="用户头像">
+                            </div>
+                            <div class="user-name">动漫控</div>
+                        </div>
+                        <div class="comment-date">1周前</div>
+                    </div>
+                    <div class="comment-content">
+                        这位艺术家的作品一直都很有特色，这部漫画延续了他一贯的高水准。不过我觉得第二话的节奏稍微有点慢，希望后面能更紧凑一些。总的来说还是很推荐的！
+                    </div>
+                    <div class="comment-actions">
+                        <div class="comment-action">
+                            <span>👍</span> 23
+                        </div>
+                        <div class="comment-action">
+                            <span>💬</span> 回复
+                        </div>
+                        <div class="comment-action">
+                            <span>🔗</span> 分享
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 评论3 -->
+                <div class="comment-item">
+                    <div class="comment-header">
+                        <div class="comment-user">
+                            <div class="user-avatar">
+                                <img src="40238-1yn9d5zp.webp" alt="用户头像">
+                            </div>
+                            <div class="user-name">新人读者</div>
+                        </div>
+                        <div class="comment-date">2周前</div>
+                    </div>
+                    <div class="comment-content">
+                        有谁能告诉我第四话大概什么时候更新？已经迫不及待了！这个系列太上瘾了！
+                    </div>
+                    <div class="comment-actions">
+                        <div class="comment-action">
+                            <span>👍</span> 8
+                        </div>
+                        <div class="comment-action">
+                            <span>💬</span> 回复
+                        </div>
+                        <div class="comment-action">
+                            <span>🔗</span> 分享
+                        </div>
+                    </div>
+                    
+                    <!-- 回复 -->
+                    <div class="comment-replies">
+                        <div class="reply-list">
+                            <div class="reply-item">
+                                <div class="comment-header">
+                                    <div class="comment-user">
+                                        <div class="user-avatar">
+                                            <img src="40238-1yn9d5zp.webp" alt="用户头像">
+                                        </div>
+                                        <div class="user-name">资深粉丝</div>
+                                    </div>
+                                    <div class="comment-date">2周前</div>
+                                </div>
+                                <div class="comment-content">
+                                    据说每个月15号左右会更新一话，所以下周应该就能看到第四话了。
+                                </div>
+                                <div class="comment-actions">
+                                    <div class="comment-action">
+                                        <span>👍</span> 5
+                                    </div>
+                                    <div class="comment-action">
+                                        <span>💬</span> 回复
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 加载更多评论 -->
+            <div class="load-more-comments">
+                加载更多评论
+            </div>
+        </div>
+    </div>
+</body>
+</html>

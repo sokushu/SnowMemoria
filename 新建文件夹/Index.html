@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>示例网页</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #7289da;
+            --secondary: #99aab5;
+            --dark: #2c2f33;
+            --dark-lighter: #36393f;
+            --text: #ffffff;
+            --text-muted: #b9bbbe;
+            --border: #4e5d94;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .navbar {
+            background-color: var(--dark-lighter);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-logo {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .navbar-links a {
+            color: var(--text);
+            text-decoration: none;
+            position: relative;
+            padding: 5px 0;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .navbar-links a:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: var(--primary);
+            transition: var(--transition);
+        }
+
+        .navbar-links a:hover {
+            color: var(--primary);
+        }
+
+        .navbar-links a:hover:after {
+            width: 100%;
+        }
+
+        .search-section {
+            margin: 40px 0;
+            background-color: var(--dark-lighter);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .categories button {
+            background-color: rgba(114, 137, 218, 0.1);
+            color: var(--text);
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .categories button:hover {
+            background-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .search-bar input[type="text"] {
+            width: 100%;
+            max-width: 500px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .search-bar input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .search-bar button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: bold;
+        }
+
+        .search-bar button:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+
+        .search-bar button:last-child {
+            background-color: transparent;
+            border: 1px solid var(--border);
+        }
+
+        .search-bar button:last-child:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .results-container {
+            background-color: var(--dark-lighter);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+        }
+
+        .results {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .results th, .results td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .results th {
+            background-color: rgba(114, 137, 218, 0.1);
+            color: var(--primary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .results tr {
+            transition: var(--transition);
+        }
+
+        .results tr:hover {
+            background-color: rgba(114, 137, 218, 0.05);
+        }
+
+        .results td:nth-child(2) {
+            font-weight: 500;
+        }
+
+        .results td:last-child {
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .navbar-links {
+                gap: 10px;
+            }
+            
+            .search-bar {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .search-bar input[type="text"] {
+                max-width: 100%;
+            }
+            
+            .results th, .results td {
+                padding: 12px 8px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="navbar-logo">MangaHub</a>
+            <div class="navbar-links">
+                <a href="#"><i class="fas fa-home"></i> 首页</a>
+                <a href="#"><i class="fas fa-bookmark"></i> 收藏</a>
+                <a href="#"><i class="fas fa-fire"></i> 热门</a>
+                <a href="#"><i class="fas fa-download"></i> 下载</a>
+                <a href="#"><i class="fas fa-cog"></i> 设置</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="search-section">
+            <div class="categories">
+                <button>Doujinshi</button>
+                <button>Manga</button>
+                <button>Artist CG</button>
+                <button>Game CG</button>
+                <button>Non-H</button>
+                <button>Image Set</button>
+                <button>Cosplay</button>
+                <button>Asian Porn</button>
+                <button>Western</button>
+                <button>Misc</button>
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="输入关键词搜索...">
+                <button><i class="fas fa-search"></i> 搜索</button>
+                <button><i class="fas fa-times"></i> 清除</button>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <table class="results">
+                <thead>
+                    <tr>
+                        <th>发布时间</th>
+                        <th>标题</th>
+                        <th>上传者</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2025-03-26 14:21</td>
+                        <td>NURSE - SILENT HILL 2 - Lustful Mind [AI Generated]</td>
+                        <td>liru13</td>
+                    </tr>
+                    <tr>
+                        <td>2025-03-26 14:16</td>
+                        <td>[BluRent] Amy x Tails set (Sonic the Hedgehog)</td>
+                        <td>dragolem</td>
+                    </tr>
+                    <!-- ...更多结果... -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 为类别按钮添加点击效果
+        document.querySelectorAll('.categories button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.categories button').forEach(btn => {
+                    btn.style.backgroundColor = 'rgba(114, 137, 218, 0.1)';
+                });
+                this.style.backgroundColor = 'var(--primary)';
+            });
+        });
+    </script>
+</body>
+</html>
