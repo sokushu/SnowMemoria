@@ -4,6 +4,7 @@ using SnowMemoria.Database;
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace SnowMemoria.Controllers
@@ -21,6 +22,8 @@ namespace SnowMemoria.Controllers
         [HttpPost]
         public async Task<IActionResult> UploadFile(IFormFile file)
         {
+            string HashStr = string.Empty;
+
             if (file == null || file.Length == 0)
             {
                 return BadRequest("No file uploaded.");
@@ -39,6 +42,7 @@ namespace SnowMemoria.Controllers
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
+                HashStr = BitConverter.ToString(SHA256.HashData(stream));
             }
 
             // Create an instance of UploadedFile and save it to the database
@@ -47,7 +51,8 @@ namespace SnowMemoria.Controllers
                 FileName = file.FileName,
                 FilePath = filePath,
                 FileSize = file.Length,
-                UploadDate = DateTime.Now
+                UploadDate = DateTime.Now,
+                Hash = HashStr
             };
 
             _context.UploadedFiles.Add(uploadedFile);

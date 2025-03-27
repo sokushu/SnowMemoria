@@ -18,6 +18,188 @@
             margin: 0;
             padding: 0;
             line-height: 1.5;
+            padding-top: 60px; /* 为固定导航栏留出空间 */
+        }
+        
+        /* 导航栏样式 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #252525;
+            height: 60px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+        }
+        
+        .navbar-container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        
+        .navbar-logo img {
+            height: 36px;
+            margin-right: 10px;
+        }
+        
+        .navbar-logo-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: #f1f1f1;
+        }
+        
+        .navbar-menu {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .navbar-menu-item {
+            color: #ddd;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: color 0.2s;
+            padding: 5px 0;
+            position: relative;
+        }
+        
+        .navbar-menu-item:hover {
+            color: #fff;
+        }
+        
+        .navbar-menu-item.active {
+            color: #fff;
+        }
+        
+        .navbar-menu-item.active::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 2px;
+            background-color: #5a344f;
+        }
+        
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-input {
+            background-color: #333;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 6px 12px;
+            padding-right: 30px;
+            color: #eee;
+            width: 180px;
+            font-size: 14px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 10px;
+            color: #aaa;
+            cursor: pointer;
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .navbar-hamburger {
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            width: 24px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .navbar-hamburger span {
+            display: block;
+            height: 2px;
+            width: 100%;
+            background-color: #f1f1f1;
+        }
+        
+        /* 响应式导航栏 */
+        @media (max-width: 768px) {
+            .navbar-menu, .search-box {
+                display: none;
+            }
+            
+            .navbar-hamburger {
+                display: flex;
+            }
+            
+            .navbar-mobile-menu {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                background-color: #252525;
+                padding: 15px;
+                box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+                display: none;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .navbar-mobile-menu.active {
+                display: flex;
+            }
+            
+            .mobile-search-box {
+                margin-bottom: 10px;
+            }
+            
+            .mobile-search-input {
+                width: 100%;
+                padding: 8px 12px;
+                background-color: #333;
+                border: 1px solid #444;
+                border-radius: 4px;
+                color: #eee;
+            }
         }
         
         .container {
@@ -568,6 +750,56 @@
     </style>
 </head>
 <body>
+    <!-- 导航栏 -->
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="#" class="navbar-logo">
+                <img src="40238-1yn9d5zp.webp" alt="Logo">
+                <span class="navbar-logo-text">漫画阅读</span>
+            </a>
+            
+            <nav class="navbar-menu">
+                <a href="#" class="navbar-menu-item active">首页</a>
+                <a href="#" class="navbar-menu-item">分类</a>
+                <a href="#" class="navbar-menu-item">排行榜</a>
+                <a href="#" class="navbar-menu-item">最新上传</a>
+                <a href="#" class="navbar-menu-item">收藏夹</a>
+            </nav>
+            
+            <div class="navbar-right">
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="搜索漫画...">
+                    <div class="search-icon">🔍</div>
+                </div>
+                
+                <div class="user-menu">
+                    <div class="user-avatar">
+                        <img src="40238-1yn9d5zp.webp" alt="用户头像">
+                    </div>
+                    <span>用户名</span>
+                </div>
+                
+                <div class="navbar-hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 移动端菜单 -->
+    <div class="navbar-mobile-menu">
+        <div class="mobile-search-box">
+            <input type="text" class="mobile-search-input" placeholder="搜索漫画...">
+        </div>
+        <a href="#" class="navbar-menu-item active">首页</a>
+        <a href="#" class="navbar-menu-item">分类</a>
+        <a href="#" class="navbar-menu-item">排行榜</a>
+        <a href="#" class="navbar-menu-item">最新上传</a>
+        <a href="#" class="navbar-menu-item">收藏夹</a>
+    </div>
+
     <div class="container">
         <div class="manga-header">
             <div class="manga-cover">

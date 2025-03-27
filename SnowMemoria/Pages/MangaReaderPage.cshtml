@@ -1,6 +1,7 @@
-﻿@page "/MangaReader/{id}"
+﻿@page "/MangaReader/{mangaid}"
 @model SnowMemoria.Pages.MangaReaderPageModel
 @{
+    Layout = null;
 }
 
 <!DOCTYPE html>
@@ -89,7 +90,7 @@
         // 初始化漫画阅读器
         document.addEventListener('DOMContentLoaded', () => {
             var mangaReader = new MangaReader();
-            mangaReader.fetchMangaData('/api/archive/upload/@Model.Id');
+            mangaReader.fetchMangaData('/api/archive/manga/@Model.MangaID');
             mangaReader.changeMode(MangaReader.MODE_SINGLE);
             window.mangaReader = mangaReader;
         });
