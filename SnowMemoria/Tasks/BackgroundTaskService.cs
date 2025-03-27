@@ -20,36 +20,61 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using Microsoft.Extensions.Hosting;
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace SnowMemoria.Tasks
 {
+    /// <summary>
+    /// 后台任务服务
+    /// </summary>
     public class BackgroundTaskService : IHostedService, IDisposable
     {
-        private Timer _timer;
+        private Timer _backgroundTimer;
         private FileSystemWatcher _fileSystemWatcher;
+        private ActionBlock<FileSystemEventArgs> _fileChangeActionBlock;
+        private ActionBlock<RenamedEventArgs> _fileRenamedActionBlock;
+        private ILogger<BackgroundTaskService> _logger;
+        private IServiceProvider _serviceProvider;
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="logger"></param>
+        /// <param name="serviceProvider"></param>
+        public BackgroundTaskService(ILogger<BackgroundTaskService> logger, IServiceProvider serviceProvider)
         {
-            _timer = new Timer(DoWork, null, TimeSpan.Zero, TimeSpan.FromMinutes(1));
+            _logger = logger;
+            _serviceProvider = serviceProvider;
+            _fileChangeActionBlock = new ActionBlock<FileSystemEventArgs>(async args =>
+            {
 
-            // Initialize FileSystemWatcher
-            _fileSystemWatcher = new FileSystemWatcher
+            });
+            _fileRenamedActionBlock = new ActionBlock<RenamedEventArgs>(async args =>
+            {
+
+            });
+            _fileSystemWatcher = _fileSystemWatcher = new FileSystemWatcher
             {
                 Path = "path/to/your/folder", // Specify the folder to monitor
                 NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
                 Filter = "*.*"
             };
-
-            // Subscribe to events
             _fileSystemWatcher.Changed += OnChanged;
             _fileSystemWatcher.Created += OnChanged;
             _fileSystemWatcher.Deleted += OnChanged;
             _fileSystemWatcher.Renamed += OnRenamed;
+            
+            _backgroundTimer = new Timer(DoWork, null, TimeSpan.MaxValue, TimeSpan.MaxValue);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            _backgroundTimer.Change(TimeSpan.Zero, TimeSpan.FromMinutes(5));
 
             // Start monitoring
             _fileSystemWatcher.EnableRaisingEvents = true;
@@ -57,33 +82,53 @@ namespace SnowMemoria.Tasks
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="state"></param>
         private void DoWork(object? state)
         {
             // 在这里执行后台任务
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void OnChanged(object sender, FileSystemEventArgs e)
         {
-            // Handle file change event
-            Console.WriteLine($"File {e.ChangeType}: {e.FullPath}");
+            _fileChangeActionBlock.Post(e);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void OnRenamed(object sender, RenamedEventArgs e)
         {
-            // Handle file rename event
-            Console.WriteLine($"File Renamed from {e.OldFullPath} to {e.FullPath}");
+            _fileRenamedActionBlock.Post(e);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public Task StopAsync(CancellationToken cancellationToken)
         {
-            _timer?.Change(Timeout.Infinite, 0);
-            _fileSystemWatcher?.Dispose();
+            _backgroundTimer?.Change(Timeout.Infinite, 0);
+            _fileSystemWatcher.EnableRaisingEvents = false;
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void Dispose()
         {
-            _timer?.Dispose();
+            _backgroundTimer?.Dispose();
             _fileSystemWatcher?.Dispose();
         }
     }

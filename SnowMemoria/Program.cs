@@ -20,8 +20,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using SnowMemoria.Database;
+using System.IO.Compression;
 using System.Text;
 
 namespace SnowMemoria
@@ -32,20 +34,37 @@ namespace SnowMemoria
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // 添加服务到容器
             builder.Services.AddRazorPages();
 
-            // Add SQLite database service
+            // 添加SQLite数据库服务
             builder.Services.AddDbContext<MyDbContext>(options =>
                 options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+            // 添加响应压缩服务
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.Providers.Add<GzipCompressionProvider>();
+                options.EnableForHttps = true;
+            });
+            builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+            {
+                options.Level = CompressionLevel.Fastest;
+            });
+
+            // 添加响应缓存服务
+            builder.Services.AddResponseCaching(option =>
+            {
+                
+            });
+
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // 配置HTTP请求管道
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+                // 默认的HSTS值是30天。对于生产环境，您可能需要更改此值，请参阅 https://aka.ms/aspnetcore-hsts。
                 app.UseHsts();
             }
 
@@ -55,6 +74,12 @@ namespace SnowMemoria
             app.UseRouting();
 
             app.UseAuthorization();
+
+            // 使用响应压缩
+            app.UseResponseCompression();
+
+            // 使用响应缓存
+            app.UseResponseCaching();
 
             app.MapRazorPages();
             app.MapControllers();
@@ -68,6 +93,11 @@ namespace SnowMemoria
     {
         private static readonly char[] _chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray();
 
+        /// <summary>
+        /// 生成随机密码
+        /// </summary>
+        /// <param name="length">密码长度</param>
+        /// <returns>随机生成的密码</returns>
         public static string GenerateRandomPassword(int length)
         {
             var random = new Random();
