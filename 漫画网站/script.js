@@ -198,7 +198,7 @@ const comicsData = {
     ]
 };
 
-// DOM 元素
+// DOM 元素。
 const comicsList = document.getElementById('comicsList');
 const gridViewBtn = document.getElementById('gridViewBtn');
 const listViewBtn = document.getElementById('listViewBtn');
