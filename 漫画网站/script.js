@@ -206,6 +206,18 @@ const scrollComicsList = document.getElementById('scrollComicsList').querySelect
 const scrollSectionSelect = document.getElementById('scrollSectionSelect');
 const refreshScrollBtn = document.getElementById('refreshScrollBtn');
 
+// 分页相关变量
+const ITEMS_PER_PAGE = 12; // 每页显示的漫画数量
+let currentPage = 1; // 当前页码
+let totalPages = 1; // 总页数
+
+// DOM 元素 - 添加分页控件相关引用
+const pageNumbers = document.getElementById('pageNumbers');
+const prevPageBtn = document.getElementById('prevPage');
+const nextPageBtn = document.getElementById('nextPage');
+const currentPageSpan = document.getElementById('currentPage');
+const totalPagesSpan = document.getElementById('totalPages');
+
 // 当前选中的分类和视图模式
 let currentScrollCategory = 'latest'; // 只保留滚动栏目的分类变量
 let isGridView = true;
@@ -253,7 +265,7 @@ function renderScrollComics() {
     }
 }
 
-// 渲染漫画列表 - 已移除分类选择功能
+// 渲染漫画列表 - 已移除分类选择功能，添加分页功能
 function renderComics() {
     // 清空现有的漫画列表
     comicsList.innerHTML = '';
@@ -261,14 +273,36 @@ function renderComics() {
     // 使用固定的"latest"分类
     const comics = comicsData.latest;
     
+    // 计算总页数
+    totalPages = Math.ceil(comics.length / ITEMS_PER_PAGE);
+    
+    // 更新UI中的总页数
+    totalPagesSpan.textContent = totalPages;
+    currentPageSpan.textContent = currentPage;
+    
+    // 确保当前页码有效
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    
+    // 计算当前页的数据范围
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, comics.length);
+    const pageComics = comics.slice(startIndex, endIndex);
+    
     // 设置视图类名
     comicsList.className = isGridView ? 'comics-grid' : 'comics-list';
     
     // 移除之前可能存在的所有浮动元素
     cleanupFloatingElements();
     
-    // 循环创建漫画条目
-    comics.forEach(comic => {
+    // 更新分页按钮状态
+    updatePaginationButtons();
+    
+    // 渲染页码
+    renderPageNumbers();
+    
+    // 循环创建漫画条目 - 只渲染当前页的内容
+    pageComics.forEach(comic => {
         // 创建漫画项元素
         const comicItem = document.createElement('div');
         comicItem.className = 'comic-item';
@@ -360,7 +394,7 @@ function renderComics() {
     // 在渲染完所有漫画后创建浮动元素
     if (!isGridView) {
         // 为列表视图(表单样式)创建浮动缩略图
-        comics.forEach(comic => {
+        pageComics.forEach(comic => {
             const preview = document.createElement('img');
             preview.src = comic.cover;
             preview.alt = `${comic.title} 预览`;
@@ -393,7 +427,7 @@ function renderComics() {
         });
     } else {
         // 为网格视图(缩略图模式)创建浮动详细信息
-        comics.forEach(comic => {
+        pageComics.forEach(comic => {
             const floatingInfo = document.createElement('div');
             floatingInfo.className = 'floating-info';
             floatingInfo.dataset.id = comic.id;
@@ -481,6 +515,71 @@ function renderComics() {
             });
         });
     }
+}
+
+// 渲染页码
+function renderPageNumbers() {
+    pageNumbers.innerHTML = '';
+    
+    // 确定显示的页码范围 (最多显示5个页码)
+    let startPage = Math.max(currentPage - 2, 1);
+    let endPage = Math.min(startPage + 4, totalPages);
+    
+    // 调整起始页码，确保始终显示5个页码（如果总页数足够）
+    if (endPage - startPage < 4 && totalPages > 4) {
+        startPage = Math.max(endPage - 4, 1);
+    }
+    
+    // 添加第一页按钮（如果需要）
+    if (startPage > 1) {
+        addPageNumber(1);
+        if (startPage > 2) {
+            addPageEllipsis();
+        }
+    }
+    
+    // 添加页码按钮
+    for (let i = startPage; i <= endPage; i++) {
+        addPageNumber(i);
+    }
+    
+    // 添加最后一页按钮（如果需要）
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            addPageEllipsis();
+        }
+        addPageNumber(totalPages);
+    }
+}
+
+// 添加页码按钮
+function addPageNumber(pageNum) {
+    const pageButton = document.createElement('div');
+    pageButton.className = `page-number ${pageNum === currentPage ? 'active' : ''}`;
+    pageButton.textContent = pageNum;
+    pageButton.addEventListener('click', () => {
+        if (pageNum !== currentPage) {
+            currentPage = pageNum;
+            renderComics();
+        }
+    });
+    pageNumbers.appendChild(pageButton);
+}
+
+// 添加省略号
+function addPageEllipsis() {
+    const ellipsis = document.createElement('div');
+    ellipsis.className = 'page-number ellipsis';
+    ellipsis.textContent = '...';
+    ellipsis.style.cursor = 'default';
+    ellipsis.style.pointerEvents = 'none';
+    pageNumbers.appendChild(ellipsis);
+}
+
+// 更新分页按钮状态
+function updatePaginationButtons() {
+    prevPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= totalPages;
 }
 
 // 更新浮动元素位置的辅助函数
@@ -615,6 +714,21 @@ function init() {
             isGridView = false;
             listViewBtn.classList.add('active');
             gridViewBtn.classList.remove('active');
+            renderComics();
+        }
+    });
+    
+    // 监听分页按钮点击
+    prevPageBtn.addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            renderComics();
+        }
+    });
+    
+    nextPageBtn.addEventListener('click', function() {
+        if (currentPage < totalPages) {
+            currentPage++;
             renderComics();
         }
     });
