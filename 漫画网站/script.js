@@ -202,7 +202,7 @@ const comicsData = {
 const API_BASE_URL = window.API_CONFIG?.BASE_URL || 'https://api.example.com'; // 从配置获取或使用默认值
 const API_TIMEOUT = window.API_CONFIG?.TIMEOUT || 10000; // 从配置获取或使用默认值
 
-// DOM 元素
+// DOM 元素。
 const comicsList = document.getElementById('comicsList');
 const gridViewBtn = document.getElementById('gridViewBtn');
 const listViewBtn = document.getElementById('listViewBtn');
