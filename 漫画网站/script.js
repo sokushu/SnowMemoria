@@ -1,4 +1,4 @@
-// 模拟漫画数据
+// 模拟漫画数据 - 保留用于API不可用时的回退
 const comicsData = {
     latest: [
         {
@@ -198,6 +198,9 @@ const comicsData = {
     ]
 };
 
+// API URL配置
+const API_BASE_URL = 'https://api.example.com'; // 替换为实际的API基础URL
+
 // DOM 元素
 const comicsList = document.getElementById('comicsList');
 const gridViewBtn = document.getElementById('gridViewBtn');
@@ -207,9 +210,9 @@ const scrollSectionSelect = document.getElementById('scrollSectionSelect');
 const refreshScrollBtn = document.getElementById('refreshScrollBtn');
 
 // 分页相关变量
-const ITEMS_PER_PAGE = 12; // 每页显示的漫画数量
 let currentPage = 1; // 当前页码
 let totalPages = 1; // 总页数
+let pageSize = 12; // 每页显示的漫画数量
 
 // DOM 元素 - 添加分页控件相关引用
 const pageNumbers = document.getElementById('pageNumbers');
@@ -222,298 +225,366 @@ const totalPagesSpan = document.getElementById('totalPages');
 let currentScrollCategory = 'latest'; // 只保留滚动栏目的分类变量
 let isGridView = true;
 
-// 渲染横向滚动漫画列表
-function renderScrollComics() {
-    // 清空现有的漫画列表
-    scrollComicsList.innerHTML = '';
-    
-    // 根据当前分类获取数据
-    const comics = comicsData[currentScrollCategory];
-    
-    // 循环创建漫画条目（显示最多20个）
-    const maxComics = Math.min(comics.length, 20);
-    for (let i = 0; i < maxComics; i++) {
-        const comic = comics[i];
-        
-        // 创建漫画项元素
-        const comicItem = document.createElement('div');
-        comicItem.className = 'scroll-comic-item';
-        
-        // 创建漫画封面图片
-        const cover = document.createElement('img');
-        cover.src = comic.cover;
-        cover.alt = comic.title;
-        cover.className = 'scroll-comic-cover';
-        
-        // 创建漫画标题
-        const title = document.createElement('div');
-        title.className = 'scroll-comic-title';
-        title.textContent = comic.title;
-        
-        // 组合漫画项
-        comicItem.appendChild(cover);
-        comicItem.appendChild(title);
-        
-        // 添加点击事件 - 可以跳转到漫画详情页
-        comicItem.addEventListener('click', function() {
-            alert(`您点击了《${comic.title}》，即将跳转到详情页...`);
-            // 这里可以添加导航到详情页的代码
-        });
-        
-        // 添加漫画项到列表
-        scrollComicsList.appendChild(comicItem);
+// API接口函数 - 获取横向滚动的漫画数据
+async function fetchScrollComics(category) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/comics/scroll?category=${category}`);
+        if (!response.ok) {
+            throw new Error('网络请求失败');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('获取滚动漫画数据失败:', error);
+        // 如果API请求失败，回退到本地数据
+        return { data: comicsData[category] || [] };
     }
 }
 
-// 渲染漫画列表 - 已移除分类选择功能，添加分页功能
-function renderComics() {
-    // 清空现有的漫画列表
-    comicsList.innerHTML = '';
-    
-    // 使用固定的"latest"分类
-    const comics = comicsData.latest;
-    
-    // 计算总页数
-    totalPages = Math.ceil(comics.length / ITEMS_PER_PAGE);
-    
-    // 更新UI中的总页数
-    totalPagesSpan.textContent = totalPages;
-    currentPageSpan.textContent = currentPage;
-    
-    // 确保当前页码有效
-    if (currentPage < 1) currentPage = 1;
-    if (currentPage > totalPages) currentPage = totalPages;
-    
-    // 计算当前页的数据范围
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, comics.length);
-    const pageComics = comics.slice(startIndex, endIndex);
-    
-    // 设置视图类名
-    comicsList.className = isGridView ? 'comics-grid' : 'comics-list';
-    
-    // 移除之前可能存在的所有浮动元素
-    cleanupFloatingElements();
-    
-    // 更新分页按钮状态
-    updatePaginationButtons();
-    
-    // 渲染页码
-    renderPageNumbers();
-    
-    // 循环创建漫画条目 - 只渲染当前页的内容
-    pageComics.forEach(comic => {
-        // 创建漫画项元素
-        const comicItem = document.createElement('div');
-        comicItem.className = 'comic-item';
-        comicItem.dataset.id = comic.id; // 存储漫画ID用于识别
+// API接口函数 - 获取带分页的漫画列表
+async function fetchPaginatedComics(page = 1, pageSize = 12) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/comics?page=${page}&pageSize=${pageSize}`);
+        if (!response.ok) {
+            throw new Error('网络请求失败');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('获取分页漫画数据失败:', error);
+        // 如果API请求失败，回退到本地数据
+        const comics = comicsData.latest;
+        const total = comics.length;
+        const totalPages = Math.ceil(total / pageSize);
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, total);
         
-        // 创建漫画封面图片
-        const cover = document.createElement('img');
-        cover.src = comic.cover;
-        cover.alt = comic.title;
-        cover.className = 'comic-cover';
+        return {
+            data: comics.slice(startIndex, endIndex),
+            pagination: {
+                currentPage: page,
+                pageSize: pageSize,
+                totalItems: total,
+                totalPages: totalPages
+            }
+        };
+    }
+}
+
+// 渲染横向滚动漫画列表
+async function renderScrollComics() {
+    // 显示加载状态
+    scrollComicsList.innerHTML = '<div style="text-align: center; width: 100%;"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+    
+    try {
+        // 从API获取数据
+        const result = await fetchScrollComics(currentScrollCategory);
+        const comics = result.data || [];
         
-        // 创建漫画信息容器
-        const info = document.createElement('div');
-        info.className = 'comic-info';
+        // 清空现有的漫画列表
+        scrollComicsList.innerHTML = '';
         
-        if (isGridView) {
-            // 网格视图(缩略图模式)
-            
-            // 漫画标题
-            const title = document.createElement('h3');
-            title.className = 'comic-title';
-            title.textContent = comic.title;
-            
-            // 在网格视图下仅显示标题
-            info.appendChild(title);
-        } else {
-            // 列表视图(表单样式) - 单行紧凑布局
-            
-            // 漫画标题
-            const title = document.createElement('h3');
-            title.className = 'comic-title';
-            title.textContent = comic.title;
-            
-            // 漫画作者（可点击）
-            const author = document.createElement('span');
-            author.className = 'comic-author';
-            author.textContent = comic.author;
-            author.title = "查看该作者的所有作品";
-            author.addEventListener('click', function(e) {
-                e.stopPropagation(); // 阻止点击事件冒泡
-                alert(`您点击了作者：${comic.author}，即将显示该作者的所有作品...`);
-                // 这里可以添加导航到作者页面的代码
-            });
-            
-            // 更新时间
-            const updateTime = document.createElement('span');
-            updateTime.className = 'comic-update';
-            updateTime.textContent = comic.updateTime;
-            
-            // 标签容器
-            const tags = document.createElement('div');
-            tags.className = 'comic-tags';
-            
-            // 添加可点击标签
-            comic.tags.forEach(tag => {
-                const tagSpan = document.createElement('span');
-                tagSpan.className = 'comic-tag';
-                tagSpan.textContent = tag;
-                tagSpan.title = `查看更多${tag}类漫画`;
-                tagSpan.addEventListener('click', function(e) {
-                    e.stopPropagation(); // 阻止点击事件冒泡
-                    alert(`您点击了标签：${tag}，即将显示更多${tag}类漫画...`);
-                    // 这里可以添加导航到标签页面的代码
-                });
-                tags.appendChild(tagSpan);
-            });
-            
-            // 组合单行紧凑布局
-            info.appendChild(title);
-            info.appendChild(author);
-            info.appendChild(updateTime);
-            info.appendChild(tags);
+        // 如果没有数据
+        if (comics.length === 0) {
+            scrollComicsList.innerHTML = '<div style="text-align: center; width: 100%;">暂无数据</div>';
+            return;
         }
         
-        // 组合漫画项
-        comicItem.appendChild(cover);
-        comicItem.appendChild(info);
-        
-        // 添加点击事件 - 可以跳转到漫画详情页
-        comicItem.addEventListener('click', function() {
-            alert(`您点击了《${comic.title}》，即将跳转到详情页...`);
-            // 这里可以添加导航到详情页的代码
-        });
-        
-        // 添加漫画项到列表
-        comicsList.appendChild(comicItem);
-    });
-    
-    // 在渲染完所有漫画后创建浮动元素
-    if (!isGridView) {
-        // 为列表视图(表单样式)创建浮动缩略图
-        pageComics.forEach(comic => {
-            const preview = document.createElement('img');
-            preview.src = comic.cover;
-            preview.alt = `${comic.title} 预览`;
-            preview.className = 'comic-preview';
-            preview.dataset.id = comic.id;
-            preview.style.display = 'none'; // 初始隐藏
-            document.body.appendChild(preview);
-        });
-        
-        // 添加鼠标进入/离开事件处理
-        const comicItems = document.querySelectorAll('.comics-list .comic-item');
-        comicItems.forEach(item => {
-            const comicId = item.dataset.id;
+        // 循环创建漫画条目（显示最多20个）
+        const maxComics = Math.min(comics.length, 20);
+        for (let i = 0; i < maxComics; i++) {
+            const comic = comics[i];
             
-            item.addEventListener('mouseenter', function() {
-                const preview = document.querySelector(`.comic-preview[data-id="${comicId}"]`);
-                if (preview) {
-                    preview.style.display = 'block';
-                    // 立即更新位置，避免闪烁
-                    updateFloatingPosition(preview);
-                }
+            // 创建漫画项元素
+            const comicItem = document.createElement('div');
+            comicItem.className = 'scroll-comic-item';
+            
+            // 创建漫画封面图片
+            const cover = document.createElement('img');
+            cover.src = comic.cover;
+            cover.alt = comic.title;
+            cover.className = 'scroll-comic-cover';
+            
+            // 创建漫画标题
+            const title = document.createElement('div');
+            title.className = 'scroll-comic-title';
+            title.textContent = comic.title;
+            
+            // 组合漫画项
+            comicItem.appendChild(cover);
+            comicItem.appendChild(title);
+            
+            // 添加点击事件 - 可以跳转到漫画详情页
+            comicItem.addEventListener('click', function() {
+                alert(`您点击了《${comic.title}》，即将跳转到详情页...`);
+                // 这里可以添加导航到详情页的代码
             });
             
-            item.addEventListener('mouseleave', function() {
-                const preview = document.querySelector(`.comic-preview[data-id="${comicId}"]`);
-                if (preview) {
-                    preview.style.display = 'none';
-                }
+            // 添加漫画项到列表
+            scrollComicsList.appendChild(comicItem);
+        }
+    } catch (error) {
+        console.error('渲染滚动漫画失败:', error);
+        scrollComicsList.innerHTML = '<div style="text-align: center; width: 100%;">加载失败，请稍后重试</div>';
+    }
+}
+
+// 渲染漫画列表 - 从API获取分页数据
+async function renderComics() {
+    try {
+        // 显示加载状态
+        comicsList.innerHTML = '<div style="text-align: center; padding: 50px;"><i class="fas fa-spinner fa-spin fa-3x"></i><p>正在加载漫画数据...</p></div>';
+        
+        // 从API获取分页数据
+        const result = await fetchPaginatedComics(currentPage, pageSize);
+        const comics = result.data || [];
+        const pagination = result.pagination || {};
+        
+        // 更新分页信息
+        currentPage = pagination.currentPage || currentPage;
+        totalPages = pagination.totalPages || 1;
+        pageSize = pagination.pageSize || pageSize;
+        
+        // 更新UI中的分页信息
+        totalPagesSpan.textContent = totalPages;
+        currentPageSpan.textContent = currentPage;
+        
+        // 清空现有的漫画列表
+        comicsList.innerHTML = '';
+        
+        // 如果没有数据
+        if (comics.length === 0) {
+            comicsList.innerHTML = '<div style="text-align: center; padding: 50px;">暂无漫画数据</div>';
+            return;
+        }
+        
+        // 设置视图类名
+        comicsList.className = isGridView ? 'comics-grid' : 'comics-list';
+        
+        // 移除之前可能存在的所有浮动元素
+        cleanupFloatingElements();
+        
+        // 更新分页按钮状态
+        updatePaginationButtons();
+        
+        // 渲染页码
+        renderPageNumbers();
+        
+        // 循环创建漫画条目
+        comics.forEach(comic => {
+            // 创建漫画项元素
+            const comicItem = document.createElement('div');
+            comicItem.className = 'comic-item';
+            comicItem.dataset.id = comic.id; // 存储漫画ID用于识别
+            
+            // 创建漫画封面图片
+            const cover = document.createElement('img');
+            cover.src = comic.cover;
+            cover.alt = comic.title;
+            cover.className = 'comic-cover';
+            
+            // 创建漫画信息容器
+            const info = document.createElement('div');
+            info.className = 'comic-info';
+            
+            if (isGridView) {
+                // 网格视图(缩略图模式)
+                
+                // 漫画标题
+                const title = document.createElement('h3');
+                title.className = 'comic-title';
+                title.textContent = comic.title;
+                
+                // 在网格视图下仅显示标题
+                info.appendChild(title);
+            } else {
+                // 列表视图(表单样式) - 单行紧凑布局
+                
+                // 漫画标题
+                const title = document.createElement('h3');
+                title.className = 'comic-title';
+                title.textContent = comic.title;
+                
+                // 漫画作者（可点击）
+                const author = document.createElement('span');
+                author.className = 'comic-author';
+                author.textContent = comic.author;
+                author.title = "查看该作者的所有作品";
+                author.addEventListener('click', function(e) {
+                    e.stopPropagation(); // 阻止点击事件冒泡
+                    alert(`您点击了作者：${comic.author}，即将显示该作者的所有作品...`);
+                    // 这里可以添加导航到作者页面的代码
+                });
+                
+                // 更新时间
+                const updateTime = document.createElement('span');
+                updateTime.className = 'comic-update';
+                updateTime.textContent = comic.updateTime;
+                
+                // 标签容器
+                const tags = document.createElement('div');
+                tags.className = 'comic-tags';
+                
+                // 添加可点击标签
+                comic.tags.forEach(tag => {
+                    const tagSpan = document.createElement('span');
+                    tagSpan.className = 'comic-tag';
+                    tagSpan.textContent = tag;
+                    tagSpan.title = `查看更多${tag}类漫画`;
+                    tagSpan.addEventListener('click', function(e) {
+                        e.stopPropagation(); // 阻止点击事件冒泡
+                        alert(`您点击了标签：${tag}，即将显示更多${tag}类漫画...`);
+                        // 这里可以添加导航到标签页面的代码
+                    });
+                    tags.appendChild(tagSpan);
+                });
+                
+                // 组合单行紧凑布局
+                info.appendChild(title);
+                info.appendChild(author);
+                info.appendChild(updateTime);
+                info.appendChild(tags);
+            }
+            
+            // 组合漫画项
+            comicItem.appendChild(cover);
+            comicItem.appendChild(info);
+            
+            // 添加点击事件 - 可以跳转到漫画详情页
+            comicItem.addEventListener('click', function() {
+                alert(`您点击了《${comic.title}》，即将跳转到详情页...`);
+                // 这里可以添加导航到详情页的代码
             });
+            
+            // 添加漫画项到列表
+            comicsList.appendChild(comicItem);
         });
-    } else {
-        // 为网格视图(缩略图模式)创建浮动详细信息
-        pageComics.forEach(comic => {
-            const floatingInfo = document.createElement('div');
-            floatingInfo.className = 'floating-info';
-            floatingInfo.dataset.id = comic.id;
-            floatingInfo.style.display = 'none'; // 初始隐藏
-            
-            // 添加漫画标题
-            const floatingTitle = document.createElement('p');
-            floatingTitle.className = 'floating-title';
-            floatingTitle.textContent = comic.title;
-            
-            // 添加详细信息
-            const floatingAuthor = document.createElement('p');
-            floatingAuthor.textContent = `作者: ${comic.author}`;
-            
-            const floatingUpdate = document.createElement('p');
-            floatingUpdate.textContent = `更新: ${comic.updateTime}`;
-            
-            // 添加标签
-            const floatingTags = document.createElement('div');
-            floatingTags.className = 'comic-tags';
-            
-            comic.tags.forEach(tag => {
-                const tagSpan = document.createElement('span');
-                tagSpan.className = 'comic-tag';
-                tagSpan.textContent = tag;
-                floatingTags.appendChild(tagSpan);
+        
+        // 在渲染完所有漫画后创建浮动元素
+        if (!isGridView) {
+            // 为列表视图(表单样式)创建浮动缩略图
+            comics.forEach(comic => {
+                const preview = document.createElement('img');
+                preview.src = comic.cover;
+                preview.alt = `${comic.title} 预览`;
+                preview.className = 'comic-preview';
+                preview.dataset.id = comic.id;
+                preview.style.display = 'none'; // 初始隐藏
+                document.body.appendChild(preview);
             });
             
-            floatingInfo.appendChild(floatingTitle);
-            floatingInfo.appendChild(floatingAuthor);
-            floatingInfo.appendChild(floatingUpdate);
-            floatingInfo.appendChild(floatingTags);
-            
-            document.body.appendChild(floatingInfo);
-            
-            // 保留旧的悬停信息（用于移动设备）
-            const comicItem = document.querySelector(`.comic-item[data-id="${comic.id}"]`);
-            if (comicItem) {
-                const hoverInfo = document.createElement('div');
-                hoverInfo.className = 'comic-hover-info';
+            // 添加鼠标进入/离开事件处理
+            const comicItems = document.querySelectorAll('.comics-list .comic-item');
+            comicItems.forEach(item => {
+                const comicId = item.dataset.id;
                 
-                const hoverAuthor = document.createElement('p');
-                hoverAuthor.textContent = `作者: ${comic.author}`;
+                item.addEventListener('mouseenter', function() {
+                    const preview = document.querySelector(`.comic-preview[data-id="${comicId}"]`);
+                    if (preview) {
+                        preview.style.display = 'block';
+                        // 立即更新位置，避免闪烁
+                        updateFloatingPosition(preview);
+                    }
+                });
                 
-                const hoverUpdate = document.createElement('p');
-                hoverUpdate.textContent = `更新: ${comic.updateTime}`;
+                item.addEventListener('mouseleave', function() {
+                    const preview = document.querySelector(`.comic-preview[data-id="${comicId}"]`);
+                    if (preview) {
+                        preview.style.display = 'none';
+                    }
+                });
+            });
+        } else {
+            // 为网格视图(缩略图模式)创建浮动详细信息
+            comics.forEach(comic => {
+                const floatingInfo = document.createElement('div');
+                floatingInfo.className = 'floating-info';
+                floatingInfo.dataset.id = comic.id;
+                floatingInfo.style.display = 'none'; // 初始隐藏
                 
-                const hoverTags = document.createElement('div');
-                hoverTags.className = 'comic-tags';
+                // 添加漫画标题
+                const floatingTitle = document.createElement('p');
+                floatingTitle.className = 'floating-title';
+                floatingTitle.textContent = comic.title;
+                
+                // 添加详细信息
+                const floatingAuthor = document.createElement('p');
+                floatingAuthor.textContent = `作者: ${comic.author}`;
+                
+                const floatingUpdate = document.createElement('p');
+                floatingUpdate.textContent = `更新: ${comic.updateTime}`;
+                
+                // 添加标签
+                const floatingTags = document.createElement('div');
+                floatingTags.className = 'comic-tags';
                 
                 comic.tags.forEach(tag => {
                     const tagSpan = document.createElement('span');
                     tagSpan.className = 'comic-tag';
                     tagSpan.textContent = tag;
-                    hoverTags.appendChild(tagSpan);
+                    floatingTags.appendChild(tagSpan);
                 });
                 
-                hoverInfo.appendChild(hoverAuthor);
-                hoverInfo.appendChild(hoverUpdate);
-                hoverInfo.appendChild(hoverTags);
+                floatingInfo.appendChild(floatingTitle);
+                floatingInfo.appendChild(floatingAuthor);
+                floatingInfo.appendChild(floatingUpdate);
+                floatingInfo.appendChild(floatingTags);
                 
-                comicItem.appendChild(hoverInfo);
-            }
-        });
-        
-        // 添加鼠标进入/离开事件处理
-        const comicItems = document.querySelectorAll('.comics-grid .comic-item');
-        comicItems.forEach(item => {
-            const comicId = item.dataset.id;
-            
-            item.addEventListener('mouseenter', function(e) {
-                const floatingInfo = document.querySelector(`.floating-info[data-id="${comicId}"]`);
-                if (floatingInfo) {
-                    floatingInfo.style.display = 'block';
-                    // 立即更新位置，避免闪烁
-                    updateFloatingPosition(floatingInfo, e.clientX, e.clientY);
+                document.body.appendChild(floatingInfo);
+                
+                // 保留旧的悬停信息（用于移动设备）
+                const comicItem = document.querySelector(`.comic-item[data-id="${comic.id}"]`);
+                if (comicItem) {
+                    const hoverInfo = document.createElement('div');
+                    hoverInfo.className = 'comic-hover-info';
+                    
+                    const hoverAuthor = document.createElement('p');
+                    hoverAuthor.textContent = `作者: ${comic.author}`;
+                    
+                    const hoverUpdate = document.createElement('p');
+                    hoverUpdate.textContent = `更新: ${comic.updateTime}`;
+                    
+                    const hoverTags = document.createElement('div');
+                    hoverTags.className = 'comic-tags';
+                    
+                    comic.tags.forEach(tag => {
+                        const tagSpan = document.createElement('span');
+                        tagSpan.className = 'comic-tag';
+                        tagSpan.textContent = tag;
+                        hoverTags.appendChild(tagSpan);
+                    });
+                    
+                    hoverInfo.appendChild(hoverAuthor);
+                    hoverInfo.appendChild(hoverUpdate);
+                    hoverInfo.appendChild(hoverTags);
+                    
+                    comicItem.appendChild(hoverInfo);
                 }
             });
             
-            item.addEventListener('mouseleave', function() {
-                const floatingInfo = document.querySelector(`.floating-info[data-id="${comicId}"]`);
-                if (floatingInfo) {
-                    floatingInfo.style.display = 'none';
-                }
+            // 添加鼠标进入/离开事件处理
+            const comicItems = document.querySelectorAll('.comics-grid .comic-item');
+            comicItems.forEach(item => {
+                const comicId = item.dataset.id;
+                
+                item.addEventListener('mouseenter', function(e) {
+                    const floatingInfo = document.querySelector(`.floating-info[data-id="${comicId}"]`);
+                    if (floatingInfo) {
+                        floatingInfo.style.display = 'block';
+                        // 立即更新位置，避免闪烁
+                        updateFloatingPosition(floatingInfo, e.clientX, e.clientY);
+                    }
+                });
+                
+                item.addEventListener('mouseleave', function() {
+                    const floatingInfo = document.querySelector(`.floating-info[data-id="${comicId}"]`);
+                    if (floatingInfo) {
+                        floatingInfo.style.display = 'none';
+                    }
+                });
             });
-        });
+        }
+    } catch (error) {
+        console.error('渲染漫画列表失败:', error);
+        comicsList.innerHTML = '<div style="text-align: center; padding: 50px;"><i class="fas fa-exclamation-circle fa-3x" style="color:#ff6b6b;"></i><p>加载失败，请稍后重试</p></div>';
     }
 }
 
@@ -653,103 +724,99 @@ function cleanupFloatingElements() {
     });
 }
 
-// 模拟API刷新数据
-function refreshData() {
-    return new Promise((resolve) => {
+// API刷新数据
+async function refreshData() {
+    try {
         // 显示加载动画
         scrollComicsList.innerHTML = '<div style="text-align: center; width: 100%;"><i class="fas fa-spinner fa-spin fa-2x"></i><p>正在加载...</p></div>';
         
-        // 模拟API延迟
-        setTimeout(() => {
-            // 随机打乱当前分类的漫画顺序
-            const comics = [...comicsData[currentScrollCategory]];
-            for (let i = comics.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [comics[i], comics[j]] = [comics[j], comics[i]];
-            }
-            
-            // 更新数据
-            comicsData[currentScrollCategory] = comics;
-            resolve();
-        }, 800);
-    });
+        // 从API获取新数据
+        await new Promise(resolve => setTimeout(resolve, 800)); // 模拟API延迟
+        await renderScrollComics();
+        return true;
+    } catch (error) {
+        console.error('刷新数据失败:', error);
+        scrollComicsList.innerHTML = '<div style="text-align: center; width: 100%;"><i class="fas fa-exclamation-circle"></i> 刷新失败</div>';
+        return false;
+    }
 }
 
 // 初始化页面
-function init() {
-    // 渲染初始漫画列表
-    renderComics();
-    renderScrollComics();
-    
-    // 移除了详细条目分类选择的监听代码
-    
-    // 监听滚动栏目分类选择变化
-    scrollSectionSelect.addEventListener('change', function() {
-        currentScrollCategory = this.value;
-        renderScrollComics();
-    });
-    
-    // 监听刷新按钮点击
-    refreshScrollBtn.addEventListener('click', function() {
-        refreshData().then(() => {
+async function init() {
+    try {
+        // 渲染初始漫画列表
+        await renderComics();
+        await renderScrollComics();
+        
+        // 监听滚动栏目分类选择变化
+        scrollSectionSelect.addEventListener('change', function() {
+            currentScrollCategory = this.value;
             renderScrollComics();
         });
-    });
-    
-    // 监听网格视图按钮点击
-    gridViewBtn.addEventListener('click', function() {
-        if (!isGridView) {
-            cleanupFloatingElements(); // 清理浮动元素
-            isGridView = true;
-            gridViewBtn.classList.add('active');
-            listViewBtn.classList.remove('active');
-            renderComics();
-        }
-    });
-    
-    // 监听列表视图按钮点击
-    listViewBtn.addEventListener('click', function() {
-        if (isGridView) {
-            cleanupFloatingElements(); // 清理浮动元素
-            isGridView = false;
-            listViewBtn.classList.add('active');
-            gridViewBtn.classList.remove('active');
-            renderComics();
-        }
-    });
-    
-    // 监听分页按钮点击
-    prevPageBtn.addEventListener('click', function() {
-        if (currentPage > 1) {
-            currentPage--;
-            renderComics();
-        }
-    });
-    
-    nextPageBtn.addEventListener('click', function() {
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderComics();
-        }
-    });
-    
-    // 给用户名添加点击事件（可选）
-    const username = document.querySelector('.username');
-    if (username) {
-        username.addEventListener('click', function(e) {
-            e.stopPropagation(); // 阻止事件冒泡
-            const dropdown = this.nextElementSibling;
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        
+        // 监听刷新按钮点击
+        refreshScrollBtn.addEventListener('click', function() {
+            refreshData();
         });
-    }
-    
-    // 点击页面其他地方关闭用户下拉菜单
-    document.addEventListener('click', function() {
-        const dropdown = document.querySelector('.user-profile .dropdown-content');
-        if (dropdown) {
-            dropdown.style.display = 'none';
+        
+        // 监听网格视图按钮点击
+        gridViewBtn.addEventListener('click', function() {
+            if (!isGridView) {
+                cleanupFloatingElements(); // 清理浮动元素
+                isGridView = true;
+                gridViewBtn.classList.add('active');
+                listViewBtn.classList.remove('active');
+                renderComics();
+            }
+        });
+        
+        // 监听列表视图按钮点击
+        listViewBtn.addEventListener('click', function() {
+            if (isGridView) {
+                cleanupFloatingElements(); // 清理浮动元素
+                isGridView = false;
+                listViewBtn.classList.add('active');
+                gridViewBtn.classList.remove('active');
+                renderComics();
+            }
+        });
+        
+        // 监听分页按钮点击
+        prevPageBtn.addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderComics();
+            }
+        });
+        
+        nextPageBtn.addEventListener('click', function() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderComics();
+            }
+        });
+        
+        // 给用户名添加点击事件（可选）
+        const username = document.querySelector('.username');
+        if (username) {
+            username.addEventListener('click', function(e) {
+                e.stopPropagation(); // 阻止事件冒泡
+                const dropdown = this.nextElementSibling;
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            });
         }
-    });
+        
+        // 点击页面其他地方关闭用户下拉菜单
+        document.addEventListener('click', function() {
+            const dropdown = document.querySelector('.user-profile .dropdown-content');
+            if (dropdown) {
+                dropdown.style.display = 'none';
+            }
+        });
+    } catch (error) {
+        console.error('初始化页面失败:', error);
+        alert('页面加载失败，请刷新重试');
+    }
 }
 
 // 页面加载完成后初始化

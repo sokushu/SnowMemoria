@@ -624,6 +624,7 @@ body {
     flex-direction: column;
     align-items: center;
     background-color: #fafafa;
+    min-height: 80px;
 }
 
 .pagination {
@@ -688,6 +689,22 @@ body {
 .page-info {
     color: #666;
     font-size: 0.85rem;
+}
+
+/* 加载状态样式 */
+.loading-container {
+    text-align: center;
+    padding: 30px;
+    color: #666;
+}
+
+.loading-container i {
+    margin-bottom: 10px;
+    color: #4a86e8;
+}
+
+.loading-error {
+    color: #ff6b6b;
 }
 
 /* 页脚 */

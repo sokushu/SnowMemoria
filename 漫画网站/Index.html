@@ -6,6 +6,15 @@
     <title>动漫乐园 - 你的漫画天地</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- API配置脚本 -->
+    <script>
+        // 全局API配置，可以根据环境不同设置不同的API地址
+        window.API_CONFIG = {
+            BASE_URL: 'https://api.example.com', // 生产环境替换为实际API地址
+            TIMEOUT: 10000 // 请求超时时间（毫秒）
+        };
+    </script>
 </head>
 <body>
     <!-- 顶部菜单栏 -->
