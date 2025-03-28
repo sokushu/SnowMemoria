@@ -24,9 +24,9 @@
         </div>
         <nav class="main-menu">
             <ul>
-                <li><a href="#"><i class="fas fa-home"></i> 首页</a></li>
+                <li><a href="#"><i class="fas fa-home"></i> <span>首页</span></a></li>
                 <li class="dropdown">
-                    <a href="#" class="dropdown-toggle"><i class="fas fa-list"></i> 漫画分类</a>
+                    <a href="#" class="dropdown-toggle"><i class="fas fa-list"></i> <span>漫画分类</span></a>
                     <div class="dropdown-content">
                         <a href="#">热血</a>
                         <a href="#">恋爱</a>
@@ -36,12 +36,15 @@
                         <a href="#">全部分类</a>
                     </div>
                 </li>
-                <li><a href="#"><i class="fas fa-cog"></i> 设置</a></li>
+                <li><a href="#"><i class="fas fa-cog"></i> <span>设置</span></a></li>
             </ul>
         </nav>
+        
+        <!-- 移除了搜索栏 -->
+        
         <div class="user-area">
             <div class="user-profile dropdown">
-                <img src="https://via.placeholder.com/40" alt="用户头像" class="user-avatar">
+                <img src="Cover.png" alt="用户头像" class="user-avatar">
                 <span class="username dropdown-toggle">用户名</span>
                 <div class="dropdown-content">
                     <a href="#"><i class="fas fa-user"></i> 个人中心</a>
@@ -55,6 +58,19 @@
 
     <!-- 主内容区 -->
     <main class="container">
+        <!-- 添加搜索栏到漫画推荐上方 -->
+        <section class="search-section">
+            <div class="search-container">
+                <form id="searchForm" action="#" method="get" onsubmit="return false;">
+                    <input type="text" id="searchInput" placeholder="搜索漫画、作者、标签..." autocomplete="off">
+                    <button type="submit" id="searchButton">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+                <div id="searchSuggestions" class="search-suggestions"></div>
+            </div>
+        </section>
+        
         <!-- 横向滚动栏目 -->
         <section class="comic-section">
             <div class="section-header">
@@ -79,8 +95,11 @@
         <!-- 漫画栏目选择器 -->
         <section class="comic-section">
             <div class="section-header">
-                <h2>漫画栏目</h2>
-                <!-- 移除了分类选择功能 -->
+                <h2 id="comicSectionTitle">漫画栏目</h2>
+                <!-- 添加重置搜索的按钮，初始隐藏 -->
+                <button id="resetSearchBtn" class="reset-search-btn" style="display: none;">
+                    <i class="fas fa-times"></i> 清除搜索
+                </button>
                 <div class="display-toggle">
                     <button id="gridViewBtn" class="active"><i class="fas fa-th"></i></button>
                     <button id="listViewBtn"><i class="fas fa-list"></i></button>

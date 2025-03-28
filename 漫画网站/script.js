@@ -199,7 +199,8 @@ const comicsData = {
 };
 
 // API URL配置
-const API_BASE_URL = 'https://api.example.com'; // 替换为实际的API基础URL
+const API_BASE_URL = window.API_CONFIG?.BASE_URL || 'https://api.example.com'; // 从配置获取或使用默认值
+const API_TIMEOUT = window.API_CONFIG?.TIMEOUT || 10000; // 从配置获取或使用默认值
 
 // DOM 元素
 const comicsList = document.getElementById('comicsList');
@@ -208,6 +209,14 @@ const listViewBtn = document.getElementById('listViewBtn');
 const scrollComicsList = document.getElementById('scrollComicsList').querySelector('.scroll-comics');
 const scrollSectionSelect = document.getElementById('scrollSectionSelect');
 const refreshScrollBtn = document.getElementById('refreshScrollBtn');
+
+// 搜索相关DOM元素
+const searchForm = document.getElementById('searchForm');
+const searchInput = document.getElementById('searchInput');
+const searchButton = document.getElementById('searchButton');
+const searchSuggestions = document.getElementById('searchSuggestions');
+const resetSearchBtn = document.getElementById('resetSearchBtn');
+const comicSectionTitle = document.getElementById('comicSectionTitle');
 
 // 分页相关变量
 let currentPage = 1; // 当前页码
@@ -224,6 +233,8 @@ const totalPagesSpan = document.getElementById('totalPages');
 // 当前选中的分类和视图模式
 let currentScrollCategory = 'latest'; // 只保留滚动栏目的分类变量
 let isGridView = true;
+let isSearchMode = false; // 添加搜索模式标记
+let searchQuery = ''; // 当前搜索关键词
 
 // API接口函数 - 获取横向滚动的漫画数据
 async function fetchScrollComics(category) {
@@ -240,8 +251,164 @@ async function fetchScrollComics(category) {
     }
 }
 
+// 搜索相关函数
+// 搜索建议API
+async function fetchSearchSuggestions(query) {
+    if (!query || query.length < 2) return []; // 至少输入2个字符才开始提示
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/search/suggestions?q=${encodeURIComponent(query)}`);
+        if (!response.ok) {
+            throw new Error('获取搜索建议失败');
+        }
+        const data = await response.json();
+        return data.suggestions || [];
+    } catch (error) {
+        console.error('获取搜索建议失败:', error);
+        // 模拟一些建议以便测试
+        return [
+            { text: `${query}相关漫画`, type: 'comic' },
+            { text: `作者: ${query}`, type: 'author' },
+            { text: `标签: ${query}`, type: 'tag' }
+        ];
+    }
+}
+
+// 显示搜索建议
+function showSearchSuggestions(suggestions, query) {
+    // 清空现有建议
+    searchSuggestions.innerHTML = '';
+    
+    // 如果没有建议或查询太短，则隐藏建议框
+    if (suggestions.length === 0 || !query || query.length < 2) {
+        searchSuggestions.style.display = 'none';
+        return;
+    }
+    
+    // 创建并添加每个建议项
+    suggestions.forEach(suggestion => {
+        const item = document.createElement('div');
+        item.className = 'search-suggestion-item';
+        
+        // 突出显示匹配部分
+        const text = suggestion.text;
+        const highlightedText = text.replace(new RegExp(`(${query})`, 'gi'), '<span class="highlight">$1</span>');
+        
+        // 根据类型添加不同图标
+        let icon = '';
+        switch (suggestion.type) {
+            case 'comic':
+                icon = '<i class="fas fa-book" style="margin-right: 8px; color: #4a86e8;"></i>';
+                break;
+            case 'author':
+                icon = '<i class="fas fa-user" style="margin-right: 8px; color: #50b45e;"></i>';
+                break;
+            case 'tag':
+                icon = '<i class="fas fa-tag" style="margin-right: 8px; color: #e6a23c;"></i>';
+                break;
+        }
+        
+        item.innerHTML = `${icon}${highlightedText}`;
+        
+        // 点击建议执行搜索
+        item.addEventListener('click', () => {
+            searchInput.value = suggestion.text;
+            searchSuggestions.style.display = 'none';
+            executeSearch(suggestion.text);
+        });
+        
+        searchSuggestions.appendChild(item);
+    });
+    
+    // 显示建议框
+    searchSuggestions.style.display = 'block';
+}
+
+// 执行搜索API请求
+async function fetchSearchResults(query, page = 1, pageSize = 12) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`);
+        if (!response.ok) {
+            throw new Error('搜索请求失败');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('搜索失败:', error);
+        // 如果API请求失败，从本地数据中模拟搜索结果
+        const allComics = [...comicsData.latest, ...comicsData.random];
+        
+        // 简单的过滤逻辑
+        const filteredComics = allComics.filter(comic => {
+            return comic.title.toLowerCase().includes(query.toLowerCase()) || 
+                   comic.author.toLowerCase().includes(query.toLowerCase()) ||
+                   comic.tags.some(tag => tag.toLowerCase().includes(query.toLowerCase()));
+        });
+        
+        // 去重，因为同一本漫画可能在latest和random中都存在
+        const uniqueComics = Array.from(new Map(filteredComics.map(item => [item.id, item])).values());
+        
+        // 分页处理
+        const total = uniqueComics.length;
+        const totalPages = Math.ceil(total / pageSize) || 1;
+        const startIndex = (page - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, total);
+        
+        return {
+            data: uniqueComics.slice(startIndex, endIndex),
+            pagination: {
+                currentPage: page,
+                pageSize: pageSize,
+                totalItems: total,
+                totalPages: totalPages
+            },
+            query: query
+        };
+    }
+}
+
+// 执行搜索
+async function executeSearch(query) {
+    if (!query || query.trim() === '') {
+        // 如果搜索关键词为空，恢复正常模式
+        resetSearch();
+        return;
+    }
+
+    // 设置为搜索模式
+    isSearchMode = true;
+    searchQuery = query.trim();
+    
+    // 更新UI显示
+    comicSectionTitle.textContent = `"${searchQuery}" 的搜索结果`;
+    resetSearchBtn.style.display = 'block';
+    
+    // 重置到第一页
+    currentPage = 1;
+    
+    // 渲染搜索结果
+    await renderComics();
+}
+
+// 重置搜索，返回普通浏览模式
+function resetSearch() {
+    isSearchMode = false;
+    searchQuery = '';
+    searchInput.value = '';
+    comicSectionTitle.textContent = '漫画栏目';
+    resetSearchBtn.style.display = 'none';
+    
+    // 重置到第一页并重新加载数据
+    currentPage = 1;
+    renderComics();
+}
+
 // API接口函数 - 获取带分页的漫画列表
 async function fetchPaginatedComics(page = 1, pageSize = 12) {
+    // 如果是搜索模式，使用搜索API
+    if (isSearchMode) {
+        return fetchSearchResults(searchQuery, page, pageSize);
+    }
+    
     try {
         const response = await fetch(`${API_BASE_URL}/comics?page=${page}&pageSize=${pageSize}`);
         if (!response.ok) {
@@ -741,6 +908,26 @@ async function refreshData() {
     }
 }
 
+// 在输入框中添加防抖处理的搜索建议功能
+const debounce = (func, delay) => {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+};
+
+// 处理输入事件，展示搜索建议
+const handleSearchInput = debounce(async (e) => {
+    const query = e.target.value.trim();
+    if (query.length >= 2) {
+        const suggestions = await fetchSearchSuggestions(query);
+        showSearchSuggestions(suggestions, query);
+    } else {
+        searchSuggestions.style.display = 'none';
+    }
+}, 300); // 300ms防抖延迟
+
 // 初始化页面
 async function init() {
     try {
@@ -811,6 +998,34 @@ async function init() {
             const dropdown = document.querySelector('.user-profile .dropdown-content');
             if (dropdown) {
                 dropdown.style.display = 'none';
+            }
+        });
+
+        // 添加搜索相关事件监听
+        searchInput.addEventListener('input', handleSearchInput);
+        
+        // 点击搜索按钮执行搜索
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const query = searchInput.value.trim();
+            searchSuggestions.style.display = 'none';
+            executeSearch(query);
+        });
+        
+        // 搜索按钮点击
+        searchButton.addEventListener('click', () => {
+            const query = searchInput.value.trim();
+            searchSuggestions.style.display = 'none';
+            executeSearch(query);
+        });
+        
+        // 重置搜索按钮点击
+        resetSearchBtn.addEventListener('click', resetSearch);
+        
+        // 点击页面其他区域关闭搜索建议
+        document.addEventListener('click', (e) => {
+            if (!searchForm.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                searchSuggestions.style.display = 'none';
             }
         });
     } catch (error) {
