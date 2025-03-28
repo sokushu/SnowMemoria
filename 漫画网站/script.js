@@ -200,7 +200,6 @@ const comicsData = {
 
 // DOM 元素
 const comicsList = document.getElementById('comicsList');
-const categorySelect = document.getElementById('comicCategorySelect');
 const gridViewBtn = document.getElementById('gridViewBtn');
 const listViewBtn = document.getElementById('listViewBtn');
 const scrollComicsList = document.getElementById('scrollComicsList').querySelector('.scroll-comics');
@@ -208,8 +207,7 @@ const scrollSectionSelect = document.getElementById('scrollSectionSelect');
 const refreshScrollBtn = document.getElementById('refreshScrollBtn');
 
 // 当前选中的分类和视图模式
-let currentCategory = 'latest';
-let currentScrollCategory = 'latest';
+let currentScrollCategory = 'latest'; // 只保留滚动栏目的分类变量
 let isGridView = true;
 
 // 渲染横向滚动漫画列表
@@ -255,13 +253,13 @@ function renderScrollComics() {
     }
 }
 
-// 渲染漫画列表
+// 渲染漫画列表 - 已移除分类选择功能
 function renderComics() {
     // 清空现有的漫画列表
     comicsList.innerHTML = '';
     
-    // 根据当前分类获取数据
-    const comics = comicsData[currentCategory];
+    // 使用固定的"latest"分类
+    const comics = comicsData.latest;
     
     // 设置视图类名
     comicsList.className = isGridView ? 'comics-grid' : 'comics-list';
@@ -584,11 +582,7 @@ function init() {
     renderComics();
     renderScrollComics();
     
-    // 监听分类选择变化
-    categorySelect.addEventListener('change', function() {
-        currentCategory = this.value;
-        renderComics();
-    });
+    // 移除了详细条目分类选择的监听代码
     
     // 监听滚动栏目分类选择变化
     scrollSectionSelect.addEventListener('change', function() {
