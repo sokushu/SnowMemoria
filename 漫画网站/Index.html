@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动漫乐园 - 你的漫画天地</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- 顶部菜单栏 -->
+    <header class="top-bar">
+        <div class="logo">
+            <h1>动漫乐园</h1>
+        </div>
+        <nav class="main-menu">
+            <ul>
+                <li><a href="#"><i class="fas fa-home"></i> 首页</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle"><i class="fas fa-list"></i> 漫画分类</a>
+                    <div class="dropdown-content">
+                        <a href="#">热血</a>
+                        <a href="#">恋爱</a>
+                        <a href="#">科幻</a>
+                        <a href="#">悬疑</a>
+                        <a href="#">搞笑</a>
+                        <a href="#">全部分类</a>
+                    </div>
+                </li>
+                <li><a href="#"><i class="fas fa-cog"></i> 设置</a></li>
+            </ul>
+        </nav>
+        <div class="user-area">
+            <div class="user-profile dropdown">
+                <img src="https://via.placeholder.com/40" alt="用户头像" class="user-avatar">
+                <span class="username dropdown-toggle">用户名</span>
+                <div class="dropdown-content">
+                    <a href="#"><i class="fas fa-user"></i> 个人中心</a>
+                    <a href="#"><i class="fas fa-heart"></i> 收藏</a>
+                    <a href="#"><i class="fas fa-history"></i> 阅读历史</a>
+                    <a href="#"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container">
+        <!-- 横向滚动栏目 -->
+        <section class="comic-section">
+            <div class="section-header">
+                <h2>漫画推荐</h2>
+                <div class="view-selector">
+                    <select id="scrollSectionSelect">
+                        <option value="latest">最新漫画</option>
+                        <option value="random">随机漫画</option>
+                    </select>
+                    <button id="refreshScrollBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> 刷新</button>
+                </div>
+            </div>
+            
+            <div id="scrollComicsList" class="scroll-section">
+                <!-- 横向滚动漫画条目将通过JS动态生成 -->
+                <div class="scroll-comics">
+                    <!-- 内容将由JS填充 -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- 漫画栏目选择器 -->
+        <section class="comic-section">
+            <div class="section-header">
+                <h2>漫画栏目</h2>
+                <div class="view-selector">
+                    <select id="comicCategorySelect">
+                        <option value="latest">最新漫画</option>
+                        <option value="random">随机漫画</option>
+                    </select>
+                </div>
+                <div class="display-toggle">
+                    <button id="gridViewBtn" class="active"><i class="fas fa-th"></i></button>
+                    <button id="listViewBtn"><i class="fas fa-list"></i></button>
+                </div>
+            </div>
+            
+            <div id="comicsList" class="comics-grid">
+                <!-- 漫画条目将通过JS动态生成 -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2023 动漫乐园 - 你的漫画天地</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
