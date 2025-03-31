@@ -8,33 +8,36 @@
 </head>
 <body>
     <div id="top-bar" class="manga-info-bar">
-        <div style="display: flex; align-items: center;">
+        <div>
             <button id="home-button">🏠 返回主页</button>
             <button id="help-button">❓ 帮助</button>
-            <div id="manga-title">漫画标题</div>
         </div>
+        <div id="manga-title">漫画标题</div>
         <div id="chapter-info">第1话</div>
         <div id="page-info">页数: <span id="current-page">0</span> / <span id="total-pages">0</span></div>
+        <div>
+            <span class="direction-label">显示模式:</span>
+            <button id="options-menu-button" class="control-button">显示选项</button>
+            <div id="options-menu" class="hidden">
+                <button id="single-mode" class="control-button">单页模式</button>
+                <button id="double-mode" class="control-button">双页模式</button>
+                <button id="continuous-mode" class="control-button">连续模式</button>
+            </div>
+        </div>
+        <div>
+            <span class="direction-label">连续模式:</span>
+            <button id="options-menu-button" class="control-button">开</button>
+        </div>
+        <div id="direction-toggle">
+            <span class="direction-label">阅读方向:</span>
+            <button id="ltr-mode" class="direction-button">从左到右</button>
+            <button id="rtl-mode" class="direction-button active">从右到左</button>
+        </div>
+        <button id="toggle-spread" class="control-button">调整跨页</button>
     </div>
 
     <div id="reader-container" class="single-page-mode">
         <!-- 漫画图片将在这里动态加载 -->
-    </div>
-
-    <div id="bottom-bar" class="manga-info-bar">
-        <div>
-            <button id="single-mode" class="control-button active">单页模式</button>
-            <button id="double-mode" class="control-button">双页模式</button>
-            <button id="continuous-mode" class="control-button">连续模式</button>
-            <div id="direction-toggle" style="display: inline-flex;">
-                <span class="direction-label">阅读方向:</span>
-                <button id="ltr-mode" class="direction-button">从左到右</button>
-                <button id="rtl-mode" class="direction-button active">从右到左</button>
-            </div>
-        </div>
-        <div>
-            <button id="toggle-spread" class="control-button">调整跨页</button>
-        </div>
     </div>
 
     <button id="prev-button" class="nav-button">◀</button>
@@ -81,5 +84,13 @@
     </div>
 
     <script src="MangaReader.js"></script>
+    <script>
+        // 初始化漫画阅读器
+        document.addEventListener('DOMContentLoaded', () => {
+            var mangaReader = new MangaReader();
+            mangaReader.changeMode(MangaReader.MODE_SINGLE);
+            window.mangaReader = mangaReader;
+        });
+    </script>
 </body>
 </html>

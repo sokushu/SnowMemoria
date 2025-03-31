@@ -56,6 +56,41 @@ class MangaReader {
          */
         this.barsVisible = true;
         /**
+         * 鼠标自动隐藏功能
+         */
+        this.mouseTimeout = null;
+        this.hideMouseCursor = () => {
+            this.container.style.cursor = 'none';
+            document.body.classList.add('no-cursor');
+        };
+        this.showMouseCursor = () => {
+            this.container.style.cursor = 'auto';
+            document.body.classList.remove('no-cursor');
+            
+            // 重置计时器
+            if (this.mouseTimeout) {
+                clearTimeout(this.mouseTimeout);
+            }
+            
+            // 设置计时器，2秒后隐藏鼠标
+            this.mouseTimeout = setTimeout(() => {
+                this.hideMouseCursor();
+            }, 2000);
+        };
+        // 初始化鼠标移动监听
+        this.container.addEventListener('mousemove', () => {
+            this.showMouseCursor();
+        });
+        // 当信息栏显示时保持鼠标可见
+        this.container.addEventListener('mouseenter', () => {
+            this.showMouseCursor();
+        });
+        // 离开阅读区域时恢复光标
+        this.container.addEventListener('mouseleave', () => {
+            clearTimeout(this.mouseTimeout);
+            this.showMouseCursor();
+        });
+        /**
          * 上一页
          */
         this.prevPageFunction = () => {
@@ -82,6 +117,7 @@ class MangaReader {
                 }
             }
         };
+        
         /**
          * 下一页
          */
@@ -189,6 +225,22 @@ class MangaReader {
                 this.closeHelp();
             }
         });
+
+        // 显示选项菜单按钮
+        const optionsMenuButton = document.getElementById('options-menu-button');
+        const optionsMenu = document.getElementById('options-menu');
+        optionsMenuButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡
+            optionsMenu.classList = '';
+            const isActive = optionsMenuButton.classList.toggle('active');
+            optionsMenu.style.display = isActive ? 'flex' : 'none';
+        });
+
+        // 点击页面其他地方时隐藏菜单
+        document.addEventListener('click', () => {
+            optionsMenuButton.classList.remove('active');
+            optionsMenu.style.display = 'none';
+        });
     }
     /**
      * 从API获取漫画数据
@@ -206,7 +258,7 @@ class MangaReader {
                 pages: Array.from({length: 9}, (_, i) => ({
                     id: i + 1,
                     // 使用file协议加载本地图片
-                    url: `file:///C:/Users/ko--o/Downloads/Manga/Manga/000${i+1}.jpg`,
+                    url: `file:///D:/Documents/Github/SnowMemoria/新建文件夹/MangaReader/Manga/000${i+1}.jpg`,
                     isSpread: false // 每5页有一个跨页
                 }))
             };
@@ -452,10 +504,10 @@ class MangaReader {
     // 显示信息栏
     showBars() {
         const topBar = document.getElementById('top-bar');
-        const bottomBar = document.getElementById('bottom-bar');
+        //const bottomBar = document.getElementById('bottom-bar');
         
         topBar.classList.remove('hidden');
-        bottomBar.classList.remove('hidden');
+        //bottomBar.classList.remove('hidden');
         
         this.barsVisible = true;
     }
@@ -463,10 +515,10 @@ class MangaReader {
     // 隐藏信息栏
     hideBars() {
         const topBar = document.getElementById('top-bar');
-        const bottomBar = document.getElementById('bottom-bar');
+        //const bottomBar = document.getElementById('bottom-bar');
         
         topBar.classList.add('hidden');
-        bottomBar.classList.add('hidden');
+        //bottomBar.classList.add('hidden');
         
         this.barsVisible = false;
     }
@@ -528,10 +580,3 @@ class MangaReader {
         document.body.style.overflow = '';
     }
 }
-
-// 初始化漫画阅读器
-document.addEventListener('DOMContentLoaded', () => {
-    var mangaReader = new MangaReader();
-    mangaReader.changeMode(MangaReader.MODE_SINGLE);
-    window.mangaReader = mangaReader;
-});

@@ -95,7 +95,7 @@ namespace SnowMemoria.ControllersAPI
         public IActionResult GetFile(string id, string picid)
         {
             var dirInfo = Directory.CreateDirectory("TestManga");
-            string img = Path.Combine(dirInfo.FullName, dir, id);
+            string img = Path.Combine(dirInfo.FullName, id, picid);
             if (System.IO.File.Exists(img))
             {
                 return File(System.IO.File.ReadAllBytes(img), "image/jpeg");
