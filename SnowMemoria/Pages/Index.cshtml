@@ -1,10 +1,139 @@
-﻿@page
-@model IndexModel
+﻿@page "/"
+@model SnowMemoria.Pages.IndexModel
 @{
-    ViewData["Title"] = "Home page";
 }
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@Model.PageTitle - @Model.WebSite.Title</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+    <!-- API配置脚本 -->
+    <script>
+        // 全局API配置，可以根据环境不同设置不同的API地址
+        window.API_CONFIG = {
+            BASE_URL: 'https://api.example.com', // 生产环境替换为实际API地址
+            TIMEOUT: 10000 // 请求超时时间（毫秒）
+        };
+    </script>
+</head>
+<body>
+    <!-- 顶部菜单栏 -->
+    <header class="top-bar">
+        <div class="logo">
+            <h1>@Model.PageTitle</h1>
+        </div>
+        <nav class="main-menu">
+            <ul>
+                <li><a href="#"><i class="fas fa-home"></i> <span>首页</span></a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle"><i class="fas fa-list"></i> <span>漫画分类</span></a>
+                    <div class="dropdown-content">
+                        <a href="#">热血</a>
+                        <a href="#">恋爱</a>
+                        <a href="#">科幻</a>
+                        <a href="#">悬疑</a>
+                        <a href="#">搞笑</a>
+                        <a href="#">全部分类</a>
+                    </div>
+                </li>
+                <li><a href="#"><i class="fas fa-cog"></i> <span>设置</span></a></li>
+            </ul>
+        </nav>
+
+        <div class="user-area">
+            <div class="user-profile dropdown">
+                <img src="Cover.png" alt="用户头像" class="user-avatar">
+                <span class="username dropdown-toggle">用户名</span>
+                <div class="dropdown-content">
+                    <a href="#"><i class="fas fa-user"></i> 个人中心</a>
+                    <a href="#"><i class="fas fa-heart"></i> 收藏</a>
+                    <a href="#"><i class="fas fa-history"></i> 阅读历史</a>
+                    <a href="#"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container">
+        <!-- 添加搜索栏到漫画推荐上方 -->
+        <section class="search-section">
+            <div class="search-container">
+                <form id="searchForm" action="#" method="get" onsubmit="return false;">
+                    <input type="text" id="searchInput" placeholder="搜索漫画、作者、标签..." autocomplete="off">
+                    <button type="submit" id="searchButton">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+                <div id="searchSuggestions" class="search-suggestions"></div>
+            </div>
+        </section>
+
+        <!-- 横向滚动栏目 -->
+        <section class="comic-section">
+            <div class="section-header">
+                <h2>漫画推荐</h2>
+                <div class="view-selector">
+                    <select id="scrollSectionSelect">
+                        <option value="latest">最新漫画</option>
+                        <option value="random">随机漫画</option>
+                    </select>
+                    <button id="refreshScrollBtn" class="refresh-btn"><i class="fas fa-sync-alt"></i> 刷新</button>
+                </div>
+            </div>
+
+            <div id="scrollComicsList" class="scroll-section">
+                <!-- 横向滚动漫画条目将通过JS动态生成 -->
+                <div class="scroll-comics">
+                    <!-- 内容将由JS填充 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 漫画栏目选择器 -->
+        <section class="comic-section">
+            <div class="section-header">
+                <h2 id="comicSectionTitle">漫画栏目</h2>
+                <!-- 添加重置搜索的按钮，初始隐藏 -->
+                <button id="resetSearchBtn" class="reset-search-btn" style="display: none;">
+                    <i class="fas fa-times"></i> 清除搜索
+                </button>
+                <div class="display-toggle">
+                    <button id="gridViewBtn" class="active"><i class="fas fa-th"></i></button>
+                    <button id="listViewBtn"><i class="fas fa-list"></i></button>
+                </div>
+            </div>
+
+            <!-- 添加分页控件 -->
+            <div class="pagination-container">
+                <div class="pagination">
+                    <button id="prevPage" class="page-btn"><i class="fas fa-angle-left"></i> 上一页</button>
+                    <div id="pageNumbers" class="page-numbers">
+                        <!-- 页码将通过JS动态生成 -->
+                    </div>
+                    <button id="nextPage" class="page-btn">下一页 <i class="fas fa-angle-right"></i></button>
+                </div>
+                <div class="page-info">
+                    <span>当前第 <span id="currentPage">1</span> 页，共 <span id="totalPages">5</span> 页</span>
+                </div>
+            </div>
+
+            <div id="comicsList" class="comics-grid">
+                <!-- 漫画条目将通过JS动态生成 -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; @DateTime.Now.Year @Model.PageTitle - @Model.WebSite.Title</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using SnowMemoria.Database;
 using System.Threading.Tasks.Dataflow;
 
 namespace SnowMemoria.Tasks
@@ -29,12 +30,15 @@ namespace SnowMemoria.Tasks
     /// </summary>
     public class BackgroundTaskService : IHostedService, IDisposable
     {
-        private Timer _backgroundTimer;
-        private FileSystemWatcher _fileSystemWatcher;
-        private ActionBlock<FileSystemEventArgs> _fileChangeActionBlock;
-        private ActionBlock<RenamedEventArgs> _fileRenamedActionBlock;
-        private ILogger<BackgroundTaskService> _logger;
-        private IServiceProvider _serviceProvider;
+        #region
+        private readonly Timer _backgroundTimer;
+        private readonly List<FileSystemWatcher> _FileSystemWatcherList = [];
+        private readonly ActionBlock<FileSystemEventArgs> _fileChangeActionBlock;
+        private readonly ActionBlock<RenamedEventArgs> _fileRenamedActionBlock;
+        private readonly ILogger<BackgroundTaskService> _logger;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly MyDbContext _context;
+        #endregion
 
         /// <summary>
         /// 
@@ -45,26 +49,42 @@ namespace SnowMemoria.Tasks
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
+            _context = serviceProvider.GetRequiredService<MyDbContext>();
+            var setting = _context.WebSiteSettings.FirstOrDefault();
+            if (setting == null)
+            {
+                setting = new WebSiteSetting();
+                _context.WebSiteSettings.Add(setting);
+                _context.SaveChanges();
+            }
+
+            foreach (var item in setting.MangaFolders ?? [])
+            {
+                _FileSystemWatcherList.Add(new FileSystemWatcher
+                {
+                    Path = Path.GetFullPath(item.Path), // Specify the folder to monitor
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
+                    Filter = "*.*"
+                });
+            }
+            _FileSystemWatcherList.ForEach(x =>
+            {
+                x.Changed += OnChanged;
+                x.Created += OnChanged;
+                x.Deleted += OnChanged;
+                x.Renamed += OnRenamed;
+            });
+
+            _backgroundTimer = new Timer(DoWork, null, TimeSpan.MaxValue, TimeSpan.MaxValue);
+
             _fileChangeActionBlock = new ActionBlock<FileSystemEventArgs>(async args =>
             {
-
+                
             });
             _fileRenamedActionBlock = new ActionBlock<RenamedEventArgs>(async args =>
             {
 
             });
-            _fileSystemWatcher = _fileSystemWatcher = new FileSystemWatcher
-            {
-                Path = "path/to/your/folder", // Specify the folder to monitor
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime,
-                Filter = "*.*"
-            };
-            _fileSystemWatcher.Changed += OnChanged;
-            _fileSystemWatcher.Created += OnChanged;
-            _fileSystemWatcher.Deleted += OnChanged;
-            _fileSystemWatcher.Renamed += OnRenamed;
-            
-            _backgroundTimer = new Timer(DoWork, null, TimeSpan.MaxValue, TimeSpan.MaxValue);
         }
 
         /// <summary>
@@ -77,7 +97,7 @@ namespace SnowMemoria.Tasks
             _backgroundTimer.Change(TimeSpan.Zero, TimeSpan.FromMinutes(5));
 
             // Start monitoring
-            _fileSystemWatcher.EnableRaisingEvents = true;
+            _FileSystemWatcherList.ForEach(x => x.EnableRaisingEvents = true);
 
             return Task.CompletedTask;
         }
@@ -119,7 +139,7 @@ namespace SnowMemoria.Tasks
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _backgroundTimer?.Change(Timeout.Infinite, 0);
-            _fileSystemWatcher.EnableRaisingEvents = false;
+            _FileSystemWatcherList.ForEach(x => x.EnableRaisingEvents = false);
             return Task.CompletedTask;
         }
 
@@ -129,7 +149,8 @@ namespace SnowMemoria.Tasks
         public void Dispose()
         {
             _backgroundTimer?.Dispose();
-            _fileSystemWatcher?.Dispose();
+            _FileSystemWatcherList.ForEach(x => x.Dispose());
+            GC.SuppressFinalize(this);
         }
     }
 }

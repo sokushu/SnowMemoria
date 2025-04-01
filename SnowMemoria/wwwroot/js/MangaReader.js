@@ -1,27 +1,4 @@
 /**
- * MIT License
- * 
- * Copyright (c) 2025 小莕菜
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
-/**
  * 漫画阅读器
  */
 class MangaReader {
@@ -46,22 +23,44 @@ class MangaReader {
      */
     static DIRECTION_RTL = 'rtl';
     /**
+     * 存储Key：阅读模式
+     */
+    static KEY_MODE = 'MODE';
+    /**
+     * 存储Key：阅读方向
+     */
+    static KEY_DIRECTION = 'MODEDIRECTION';
+
+    /**
      * 初始化
      */
     constructor() {
+        this.GetLocalStorage = (key, defVal) => {
+            var value = localStorage.getItem(key);
+            if (value) {
+                return value;
+            } else {
+                localStorage.setItem(key, defVal);
+                return defVal;
+            }
+        };
+        this.SaveLocalStorage = (key, value) => {
+            localStorage.setItem(key, value);
+            return value;
+        };
+
         /**
          * 默认单页模式
          */
-        this.currentMode = MangaReader.MODE_SINGLE;
+        this.currentMode = this.GetLocalStorage(MangaReader.KEY_MODE, MangaReader.MODE_SINGLE);
         /**
          * 默认从右到左阅读（漫画常用）
          */
-        this.readingDirection = MangaReader.DIRECTION_RTL;
+        this.readingDirection = this.GetLocalStorage(MangaReader.KEY_DIRECTION, MangaReader.DIRECTION_RTL);
         /**
          * 跨页调整状态
          */
         this.spreadsAdjusted = false; 
-        // 
         /**
          * 漫画数据
          */
@@ -78,6 +77,41 @@ class MangaReader {
          * 信息栏可见状态
          */
         this.barsVisible = true;
+        /**
+         * 鼠标自动隐藏功能
+         */
+        this.mouseTimeout = null;
+        this.hideMouseCursor = () => {
+            this.container.style.cursor = 'none';
+            document.body.classList.add('no-cursor');
+        };
+        this.showMouseCursor = () => {
+            this.container.style.cursor = 'auto';
+            document.body.classList.remove('no-cursor');
+            
+            // 重置计时器
+            if (this.mouseTimeout) {
+                clearTimeout(this.mouseTimeout);
+            }
+            
+            // 设置计时器，2秒后隐藏鼠标
+            this.mouseTimeout = setTimeout(() => {
+                this.hideMouseCursor();
+            }, 2000);
+        };
+        // 初始化鼠标移动监听
+        this.container.addEventListener('mousemove', () => {
+            this.showMouseCursor();
+        });
+        // 当信息栏显示时保持鼠标可见
+        this.container.addEventListener('mouseenter', () => {
+            this.showMouseCursor();
+        });
+        // 离开阅读区域时恢复光标
+        this.container.addEventListener('mouseleave', () => {
+            clearTimeout(this.mouseTimeout);
+            this.showMouseCursor();
+        });
         /**
          * 上一页
          */
@@ -105,6 +139,7 @@ class MangaReader {
                 }
             }
         };
+        
         /**
          * 下一页
          */
@@ -134,6 +169,7 @@ class MangaReader {
             }
         };
         this.initEventListeners();
+        this.fetchMangaData();
     }
     /**
      * 初始化事件监听器
@@ -211,27 +247,43 @@ class MangaReader {
                 this.closeHelp();
             }
         });
+
+        // 显示选项菜单按钮
+        const optionsMenuButton = document.getElementById('options-menu-button');
+        const optionsMenu = document.getElementById('options-menu');
+        optionsMenuButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡
+            optionsMenu.classList = '';
+            const isActive = optionsMenuButton.classList.toggle('active');
+            optionsMenu.style.display = isActive ? 'flex' : 'none';
+        });
+
+        // 点击页面其他地方时隐藏菜单
+        document.addEventListener('click', () => {
+            optionsMenuButton.classList.remove('active');
+            optionsMenu.style.display = 'none';
+        });
     }
     /**
      * 从API获取漫画数据
      */
-    async fetchMangaData(apiurl) {
+    async fetchMangaData() {
         try {
             // 这里应替换为实际的API接口
-            const response = await fetch(apiurl);
-            this.mangaData = await response.json();
+            // const response = await fetch('https://your-manga-api.com/manga/123');
+            // this.mangaData = await response.json();
             
-            //// 模拟数据，实际应用中应从API获取
-            //this.mangaData = {
-            //    title: "示例漫画",
-            //    chapter: "第1章",
-            //    pages: Array.from({length: 9}, (_, i) => ({
-            //        id: i + 1,
-            //        // 使用file协议加载本地图片
-            //        url: `file:///C:/Users/ko--o/Downloads/Manga/Manga/000${i+1}.jpg`,
-            //        isSpread: false // 每5页有一个跨页
-            //    }))
-            //};
+            // 模拟数据，实际应用中应从API获取
+            this.mangaData = {
+                title: "示例漫画",
+                chapter: "第1章",
+                pages: Array.from({length: 9}, (_, i) => ({
+                    id: i + 1,
+                    // 使用file协议加载本地图片
+                    url: `file:///D:/Documents/Github/SnowMemoria/新建文件夹/MangaReader/Manga/000${i+1}.jpg`,
+                    isSpread: false // 每5页有一个跨页
+                }))
+            };
             
             this.updateUI();
             this.showBars(); // 初始显示信息栏
@@ -398,7 +450,7 @@ class MangaReader {
 
     // 切换阅读模式
     changeMode(mode) {
-        this.currentMode = mode;
+        this.currentMode = this.SaveLocalStorage(MangaReader.KEY_MODE, mode);
         
         // 更新按钮状态
         document.querySelectorAll('.control-button').forEach(btn => btn.classList.remove('active'));
@@ -474,22 +526,14 @@ class MangaReader {
     // 显示信息栏
     showBars() {
         const topBar = document.getElementById('top-bar');
-        const bottomBar = document.getElementById('bottom-bar');
-        
         topBar.classList.remove('hidden');
-        bottomBar.classList.remove('hidden');
-        
         this.barsVisible = true;
     }
     
     // 隐藏信息栏
     hideBars() {
         const topBar = document.getElementById('top-bar');
-        const bottomBar = document.getElementById('bottom-bar');
-        
         topBar.classList.add('hidden');
-        bottomBar.classList.add('hidden');
-        
         this.barsVisible = false;
     }
     
@@ -508,7 +552,7 @@ class MangaReader {
      * @param {阅读的方向} direction 
      */
     changeDirection(direction) {
-        this.readingDirection = direction;
+        this.readingDirection = this.SaveLocalStorage(MangaReader.KEY_DIRECTION, direction);
         
         // 更新按钮状态
         document.querySelectorAll('.direction-button').forEach(btn => btn.classList.remove('active'));
@@ -524,9 +568,6 @@ class MangaReader {
         if (confirm('确定要返回主页吗？当前阅读进度将不会保存。')) {
             // 可以替换为实际的主页URL
             window.location.href = 'index.html'; // 或其他主页路径
-            
-            // 如果没有实际的主页，可以用以下代码模拟
-            // alert('已点击返回主页按钮');
         }
     }
     /**

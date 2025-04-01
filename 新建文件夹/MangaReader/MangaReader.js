@@ -23,22 +23,44 @@ class MangaReader {
      */
     static DIRECTION_RTL = 'rtl';
     /**
+     * 存储Key：阅读模式
+     */
+    static KEY_MODE = 'MODE';
+    /**
+     * 存储Key：阅读方向
+     */
+    static KEY_DIRECTION = 'MODEDIRECTION';
+
+    /**
      * 初始化
      */
     constructor() {
+        this.GetLocalStorage = (key, defVal) => {
+            var value = localStorage.getItem(key);
+            if (value) {
+                return value;
+            } else {
+                localStorage.setItem(key, defVal);
+                return defVal;
+            }
+        };
+        this.SaveLocalStorage = (key, value) => {
+            localStorage.setItem(key, value);
+            return value;
+        };
+
         /**
          * 默认单页模式
          */
-        this.currentMode = MangaReader.MODE_SINGLE;
+        this.currentMode = this.GetLocalStorage(MangaReader.KEY_MODE, MangaReader.MODE_SINGLE);
         /**
          * 默认从右到左阅读（漫画常用）
          */
-        this.readingDirection = MangaReader.DIRECTION_RTL;
+        this.readingDirection = this.GetLocalStorage(MangaReader.KEY_DIRECTION, MangaReader.DIRECTION_RTL);
         /**
          * 跨页调整状态
          */
         this.spreadsAdjusted = false; 
-        // 
         /**
          * 漫画数据
          */
@@ -428,7 +450,7 @@ class MangaReader {
 
     // 切换阅读模式
     changeMode(mode) {
-        this.currentMode = mode;
+        this.currentMode = this.SaveLocalStorage(MangaReader.KEY_MODE, mode);
         
         // 更新按钮状态
         document.querySelectorAll('.control-button').forEach(btn => btn.classList.remove('active'));
@@ -504,22 +526,14 @@ class MangaReader {
     // 显示信息栏
     showBars() {
         const topBar = document.getElementById('top-bar');
-        //const bottomBar = document.getElementById('bottom-bar');
-        
         topBar.classList.remove('hidden');
-        //bottomBar.classList.remove('hidden');
-        
         this.barsVisible = true;
     }
     
     // 隐藏信息栏
     hideBars() {
         const topBar = document.getElementById('top-bar');
-        //const bottomBar = document.getElementById('bottom-bar');
-        
         topBar.classList.add('hidden');
-        //bottomBar.classList.add('hidden');
-        
         this.barsVisible = false;
     }
     
@@ -538,7 +552,7 @@ class MangaReader {
      * @param {阅读的方向} direction 
      */
     changeDirection(direction) {
-        this.readingDirection = direction;
+        this.readingDirection = this.SaveLocalStorage(MangaReader.KEY_DIRECTION, direction);
         
         // 更新按钮状态
         document.querySelectorAll('.direction-button').forEach(btn => btn.classList.remove('active'));
@@ -554,9 +568,6 @@ class MangaReader {
         if (confirm('确定要返回主页吗？当前阅读进度将不会保存。')) {
             // 可以替换为实际的主页URL
             window.location.href = 'index.html'; // 或其他主页路径
-            
-            // 如果没有实际的主页，可以用以下代码模拟
-            // alert('已点击返回主页按钮');
         }
     }
     /**

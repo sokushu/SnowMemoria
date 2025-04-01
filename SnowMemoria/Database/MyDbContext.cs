@@ -47,5 +47,7 @@ namespace SnowMemoria.Database
         /// 
         /// </summary>
         public DbSet<Archive> Archives { get; set; }
+
+        public DbSet<WebSiteSetting> WebSiteSettings { get; set; }
     }
 }

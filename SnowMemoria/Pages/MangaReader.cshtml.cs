@@ -4,7 +4,7 @@ using SnowMemoria.Models;
 
 namespace SnowMemoria.Pages
 {
-    public class IndexModel : PageModel
+    public class MangaReaderModel : PageModel
     {
         /// <summary>
         /// 网站信息
@@ -19,6 +19,9 @@ namespace SnowMemoria.Pages
         /// <summary>
         /// 
         /// </summary>
+        [BindProperty(SupportsGet = true, Name = "MangaID")]
+        public string? MangaID { get; set; }
+
         public void OnGet()
         {
         }
